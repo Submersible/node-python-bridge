@@ -1,0 +1,23 @@
+{
+  "name": "python-bridge",
+  "version": "0.1.0",
+  "description": "Node.js to Python bridge ✨🐍🚀✨",
+  "main": "index.js",
+  "scripts": {
+    "test": "tap test.js"
+  },
+  "keywords": [
+    "python",
+    "bridge",
+    "ipc"
+  ],
+  "author": "Ryan Munro <ryan@submersible.io>",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.0.5"
+  },
+  "devDependencies": {
+    "tap": "^2.3.1",
+    "temp": "^0.8.3"
+  }
+}

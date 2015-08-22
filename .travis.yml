@@ -1,0 +1,32 @@
+language: python
+os:
+    - "linux"
+    # - "osx"
+env:
+    - NODE_VERSION="5.1"
+    - NODE_VERSION="5.0"
+    - NODE_VERSION="4.2"
+    - NODE_VERSION="4.1"
+    - NODE_VERSION="4.0"
+    # - NODE_VERSION="0.12"
+    # - NODE_VERSION="0.10"
+python:
+    - "3.5"
+    - "3.4"
+    - "3.3"
+    - "3.2"
+    - "2.7"
+    - "2.6"
+before_install:
+  - rm -rf ~/.nvm
+  - git clone https://github.com/creationix/nvm.git ~/.nvm
+  - source ~/.nvm/nvm.sh
+  - nvm install $NODE_VERSION
+install:
+    - pip install six
+    - npm install
+before_script:
+    - python -V
+    - node --version
+script:
+    npm test
