@@ -134,16 +134,16 @@ function isPythonException(name) {
 function singleQueue() {
     let last = Promise.resolve();
     return function enqueue(f) {
-        let defer = Promise.defer();
         let wait = last;
-        last = defer.promise;
+        let done;
+        last = new Promise(resolve => {
+            done = resolve;
+        });
         return new Promise((resolve, reject) => {
             wait.finally(() => {
                 Promise.try(f).then(resolve, reject);
             });
-        }).finally(() => {
-            defer.resolve();
-        });
+        }).finally(() => done());
     };
 }
 
