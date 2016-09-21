@@ -27,7 +27,7 @@ python.end();
 
 ## var python = pythonBridge(options)
 
-Spawns a Python interpreter pipe to execute code, and receive data.
+Spawns a Python interpreter, exposing a bridge to the running processing.  Configurable via `options`.
 
 * `options.python` - Python interpreter, defaults to `python`
 
@@ -48,7 +48,7 @@ var python = pythonBridge({
 
 ## python`` `expression(args...)` ``.then(...)
 
-Evaluates an expression.
+Evaluates Python code, returning the value back to Node.
 
 ```javascript
 // Interpolates arguments using JSON serialization.
@@ -63,7 +63,7 @@ python`dict(baz=123, **${obj})`.then(x => {
 
 ## python.ex`` `statement` ``.then(...)
 
-Execute a statement that does not return a value.
+Execute Python statements.
 
 ```javascript
 let a = 123, b = 321;
