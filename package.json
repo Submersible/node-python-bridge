@@ -1,11 +1,19 @@
 {
   "name": "python-bridge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
   "main": "index.js",
   "scripts": {
     "test": "tap test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Submersible/node-python-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Submersible/node-python-bridge/issues"
+  },
+  "homepage": "https://github.com/Submersible/node-python-bridge#readme",
   "keywords": [
     "python",
     "bridge",
