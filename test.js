@@ -156,7 +156,7 @@ test('readme', t => {
             hello = 123
             print(hello + world)
             world = 321
-        `.catch(python.Exception, () => t.ok(true));
+        `.catch(pythonBridge.PythonException, () => t.ok(true));
 
         python.ex`
             hello = 123
@@ -166,7 +166,7 @@ test('readme', t => {
 
         function pyDivide(numerator, denominator) {
             return python`${numerator} / ${denominator}`
-                .catch(python.isException('ZeroDivisionError'), () => Promise.resolve(Infinity));
+                .catch(pythonBridge.isPythonException('ZeroDivisionError'), () => Promise.resolve(Infinity));
         }
         pyDivide(1, 0).then(x => {
             t.equal(x, Infinity);

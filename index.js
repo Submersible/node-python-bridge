@@ -1,104 +1,89 @@
 'use strict';
 
 let Promise = require('bluebird');
+let Channel = require('./channel');
+let dedent = require('./dedent');
+let json = require('./json');
 let path = require('path');
 let child_process = Promise.promisifyAll(require('child_process'));
 
 const PYTHON_BRIDGE_SCRIPT = path.join(__dirname, 'node_python_bridge.py');
 
-function pythonBridge(opts) {
-    // default options
-    let intepreter = opts && opts.python || 'python';
-    let stdio = opts && opts.stdio || ['pipe', process.stdout, process.stderr];
-    let options = {
-        cwd: opts && opts.cwd,
-        env: opts && opts.env,
-        uid: opts && opts.uid,
-        gid: opts && opts.gid,
-        stdio: stdio.concat(['ipc'])
-    };
+function pythonBridge({
+  python:intepreter='python', cwd, env, uid, gid,
+  stdin='pipe', stdout=process.stdout, stderr=process.stderr
+}) {
+  return new Promise((resolve, reject) => {
+    let ps = child_process.spawn(intepreter, [PYTHON_BRIDGE_SCRIPT], {
+      cwd, env, uid, gid, stdio: [stdin, stdout, stderr, 'ipc']
+    });
 
-    // create process bridge
-    let ps = child_process.spawn(intepreter, [PYTHON_BRIDGE_SCRIPT], options);
-    let queue = singleQueue();
+    // test that it works
+    // @TODO
 
-    function sendPythonCommand(type, enqueue, self) {
-        function wrapper() {
-            self = self || wrapper;
-            let code = json.apply(this, arguments);
-            let on_message, on_close;
+    ps.once('close', () => {
+      // @TODO handle closing
+      __proto__.connected = false;
+    });
 
-            if (!(this && this.connected || self.connected)) {
-                return Promise.reject(new PythonBridgeNotConnected());
-            }
-
-            return enqueue(() => new Promise((resolve, reject) => {
-                ps.send({type: type, code: code});
-                ps.once('message', onMessage);
-                ps.once('close', onClose);
-
-                function onMessage(data) {
-                    ps.removeListener('close', onClose);
-                    if (data && data.type && data.type === 'success') {
-                        resolve(data.value);
-                    } else if (data && data.type && data.type === 'exception') {
-                        reject(new PythonException(data.value));
-                    } else {
-                        reject(data);
-                    }
-                }
-
-                function onClose(exit_code, message) {
-                    ps.removeListener('message', onMessage);
-                    if (!message) {
-                        reject(new Error(`Python process closed with exit code ${exit_code}`));
-                    } else {
-                        reject(new Error(`Python process closed with exit code ${exit_code} and message: ${message}`));
-                    }
-                }
-            }));
-        }
-        return wrapper;
-    }
-
-    function setupLock(enqueue) {
-        return f => {
-            return enqueue(() => {
-                let lock_queue = singleQueue();
-                let lock_python = sendPythonCommand('evaluate', lock_queue);
-                lock_python.ex = sendPythonCommand('execute', lock_queue, lock_python);
-                lock_python.lock = setupLock(lock_queue);
-                lock_python.connected = true;
-                lock_python.__proto__ = python;
-
-                return f(lock_python);
-            });
-        };
-    }
-
-    // API
-    let python = sendPythonCommand('evaluate', queue);
-    python.ex = sendPythonCommand('execute', queue, python);
-    python.lock = setupLock(queue);
-    python.pid = ps.pid;
-    python.connected = true;
-    python.Exception = PythonException;
-    python.isException = isPythonException;
-    python.disconnect = () => {
-        python.connected = false;
-        return queue(() => {
-            ps.disconnect();
-        });
-    };
-    python.end = python.disconnect;
-    python.kill = signal => {
-        python.connected = false;
+    // open up bridge
+    let lock = new Channel();
+    let __proto__ = {
+      end: () => {
+        throw Error('@TODO NOT IMPLEMENTED');
+      },
+      kill: signal => {
+        __proto__.connected = false;
         ps.kill(signal);
+      },
+      pid: ps.pid, stdin: ps.stdin, stdout: ps.stdout, stderr: ps.stderr,
+      connected: true
     };
-    python.stdin = ps.stdin;
-    python.stdout = ps.stdout;
-    python.stderr = ps.stderr;
-    return python;
+    lock.put();
+    resolve(createPython(ps, __proto__, lock));
+  }).disposer(python => {
+    python.end();
+  });
+}
+
+function createPython(ps, __proto__, lock) {
+  function python(c) {
+    let code = json.apply(this, arguments);
+    return lock.get().then(() => new Promise((resolve, reject) => {
+      ps.send({type: 'code', code: code});
+      ps.once('message', onMessage);
+      ps.once('close', onClose);
+
+      function onMessage(data) {
+        ps.removeListener('close', onClose);
+        if (data && data.type && data.type === 'success') {
+          resolve(data.value);
+        } else if (data && data.type && data.type === 'exception') {
+          reject(new PythonException(data.value));
+        } else {
+          reject(data);
+        }
+      }
+
+      function onClose(exit_code, message) {
+        ps.removeListener('message', onMessage);
+        if (!message) {
+          reject(new Error(`Python process closed with exit code ${exit_code}`));
+        } else {
+          reject(new Error(`Python process closed with exit code ${exit_code} and message: ${message}`));
+        }
+      }
+    }).finally(() => lock.put()));
+  }
+  python.lock = function (f) {
+    return lock.get().then(() => {
+      let nestedLock = new Channel();
+      nestedLock.put();
+      return Promise.try(f, createPython(ps, __proto__, nestedLock)).finally(() => lock.put());
+    });
+  };
+  python.__proto__ == __proto__;
+  return python;
 }
 
 class PythonException extends Error {
@@ -116,67 +101,26 @@ class PythonException extends Error {
         this.format = exc.format;
     }
 }
-
-class PythonBridgeNotConnected extends Error {
-    constructor() {
-        super('Python bridge is no longer connected.');
-    }
-}
-
 function isPythonException(name) {
-    return exc => (
-        exc instanceof PythonException &&
-        exc.exception &&
-        exc.exception.type.name === name
-    );
-}
-
-function singleQueue() {
-    let last = Promise.resolve();
-    return function enqueue(f) {
-        let wait = last;
-        let done;
-        last = new Promise(resolve => {
-            done = resolve;
-        });
-        return new Promise((resolve, reject) => {
-            wait.finally(() => {
-                Promise.try(f).then(resolve, reject);
-            });
-        }).finally(() => done());
-    };
-}
-
-function dedent(code) {
-    // dedent text
-    let lines = code.split('\n');
-    let offset = null;
-
-    // remove extra blank starting line
-    if (!lines[0].trim()) {
-        lines.shift();
-    }
-    for (let line of lines) {
-        let trimmed = line.trimLeft();
-        if (trimmed) {
-            offset = (line.length - trimmed.length) + 1;
-            break;
-        }
-    }
-    if (!offset) {
-        return code;
-    }
-    let match = new RegExp('^' + new Array(offset).join('\\s?'));
-    return lines.map(line => line.replace(match, '')).join('\n');
-}
-
-function json(text_nodes) {
-    let values = Array.prototype.slice.call(arguments, 1);
-    return dedent(text_nodes.reduce((cur, acc, i) => cur + JSON.stringify(values[i - 1]) + acc));
+  return exc => exc instanceof PythonException && exc.exception && exc.exception.type.name === name;
 }
 
 pythonBridge.PythonException = PythonException;
-pythonBridge.PythonBridgeNotConnected = PythonBridgeNotConnected;
 pythonBridge.isPythonException = isPythonException;
-pythonBridge.json = json;
 module.exports = pythonBridge;
+
+// before 182 LOC
+
+/*
+[ ] convert python stack trace to javascript stack trace
+[ ] write tests for stack traces
+[ ] provide better error reporting for common mistakes
+[ ] use bluebird resources
+[ ] use channels to implement locking
+[ ] polymorphic expression / statement usage
+[ ] test with gevent
+[ ] test with asyncio
+[ ] provide ASYNC usage!!
+[ ] modernize readme to use async/await library
+[ ] test randomly dying app
+*/

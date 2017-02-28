@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
 
-import six
 import os
 import sys
 import json
 import traceback
 
 NODE_CHANNEL_FD = int(os.environ['NODE_CHANNEL_FD'])
+UNICODE_TYPE = type(u'')
 
 
 def format_exception(t=None, e=None, tb=None):
@@ -33,6 +33,16 @@ if __name__ == '__main__':
     writer = os.fdopen(NODE_CHANNEL_FD, 'w')
     reader = os.fdopen(NODE_CHANNEL_FD, 'r')
 
+    def write(data):
+        writer.write(json.dumps(data, separators=(',', ':')) + '\n')
+        writer.flush()
+
+    # We're ready to accept commands!
+    write(dict(
+        type='ready',
+        version=tuple(sys.version_info)
+    ))
+
     while True:
         try:
             # Read new command
@@ -44,7 +54,7 @@ if __name__ == '__main__':
             # Assert data saneness
             if data['type'] not in ['execute', 'evaluate']:
                 raise Exception('Python bridge call `type` must be `execute` or `evaluate`')
-            if not isinstance(data['code'], six.string_types):
+            if not isinstance(data['code'], UNICODE_TYPE):
                 raise Exception('Python bridge call `code` must be a string.')
 
             # Run Python code
@@ -57,8 +67,7 @@ if __name__ == '__main__':
             t, e, tb = sys.exc_info()
             response = dict(type='exception', value=format_exception(t, e, tb))
 
-        writer.write(json.dumps(response, separators=(',', ':')) + '\n')
-        writer.flush()
+        write(response)
 
     # Closing is messy
     try:

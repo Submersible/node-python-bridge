@@ -10,87 +10,94 @@ npm install python-bridge
 'use strict';
 
 let assert = require('assert');
+let Promise = require('bluebird');
 let pythonBridge = require('python-bridge');
 
-let python = pythonBridge();
+let pythonResource = pythonBridge(); // start Python interpreter
 
-python.ex`import math`;
-python`math.sqrt(9)`.then(x => assert.equal(x, 3));
+Promise.using(pythonResource, function *(python) { // resource management, closes interpreter when done
+  python`import math`;
+  let sqrt = yield python`math.sqrt(9)`; // commands queue up, so no need to wait on `import math`
+  assert.equal(sqrt, 3);
 
-let list = [3, 4, 2, 1];
-python`sorted(${list})`.then(x => assert.deepEqual(x, list.sort()));
-
-python.end();
+  let list = [3, 4, 2, 1];
+  let sorted = yield python`sorted(${list})`;
+  assert.deepEqual(sorted, list.sort());
+});
 ```
 
 # API
 
-## var python = pythonBridge(options)
+## let python = pythonBridge(options)
 
-Spawns a Python interpreter, exposing a bridge to the running processing.  Configurable via `options`.
+Spawns a Python interpreter, exposing a bridge to the running processing.
 
-* `options.python` - Python interpreter, defaults to `python`
-
-Also inherits the following from [`child_process.spawn([options])`](https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options).
-
-* `options.cwd` - String Current working directory of the child process
-* `options.env` - Object Environment key-value pairs
-* `options.stdio` - Array Child's stdio configuration. Defaults to `['pipe', process.stdout, process.stderr]`
+* `options.python` - Python interpreter, defaults to `'python'`
+* `options.cwd` - Working directory of the Python process, defaults to `process.cwd()`
+* `options.env` - Environment variables, defaults to `process.env`
+* `options.stdin` - Defaults to `'pipe'`
+* `options.stdout` - Defaults to `process.stdout`
+* `options.stderr` - Defaults to `process.stderr`
 * `options.uid` - Number Sets the user identity of the process.
 * `options.gid` - Number Sets the group identity of the process.
 
 ```javascript
 var python = pythonBridge({
-    python: 'python3',
-    env: {PYTHONPATH: '/foo/bar'}
+  python: 'python3',
+  env: {PYTHONPATH: '/foo/bar'}
 });
 ```
 
-## python`` `expression(args...)` ``.then(...)
+## python&#96;code&#96;.then(...)  
 
-Evaluates Python code, returning the value back to Node.
-
-```javascript
-// Interpolates arguments using JSON serialization.
-python`sorted(${[6, 4, 1, 3]})`.then(x => assert.deepEqual(x, [1, 3, 4, 6]));
-
-// Passing key-value arguments
-let obj = {hello: 'world', foo: 'bar'};
-python`dict(baz=123, **${obj})`.then(x => {
-    assert.deepEqual(x, {baz: 123, hello: 'world', foo: 'bar'});
-});
-```
-
-## python.ex`` `statement` ``.then(...)
-
-Execute Python statements.
+Runs Python code in the interpreter, returning the value back to Node.
 
 ```javascript
-let a = 123, b = 321;
-python.ex`
+Promise.using(python, function *(python) {
+  // Interpolates arguments using JSON serialization.
+  let x = yield python`sorted(${[6, 4, 1, 3]})`;
+  assert.deepEqual(x, [1, 3, 4, 6]);
+
+  // Passing key-value arguments
+  let obj = {hello: 'world', foo: 'bar'};
+  let dict = yield python`dict(baz=123, **${obj})`;
+  assert.deepEqual(dict, {baz: 123, hello: 'world', foo: 'bar'});
+
+  // Define function in Python
+  python`
     def hello(a, b):
-        return a + b
-`;
-python`hello(${a}, ${b})`.then(x => assert.equal(x, a + b));
+      return a + b
+  `;
+
+  // Then call it
+  let a = 123, b = 321;
+  let hello = python`hello(${a}, ${b})`;
+  assert.equal(hello, a + b);
+});
 ```
 
-## python.lock(...).then(...)
+## python.lock(python => ...).then(...)
 
 Locks access to the Python interpreter so code can be executed atomically.  If possible, it's recommend to define a function in Python to handle atomicity.  
 
 ```javascript
-python.lock(python => {
-    python.ex`hello = 123`;
-    return python`hello + 321'`;
-}).then(x => assert.equal(x, 444));
+Promise.using(python, function *(python) {
+  let lock = yield python.lock(function *() {
+    python`hello = 123`;
+    let value = yield python`hello + 321'`;
+    return value;
+  });
+  assert.equal(lock, 444);
 
-// Recommended to define function in Python
-python.ex`
+  // If possible, it's better to define a Python function to do things atomically
+  python`
     def atomic():
-        hello = 123
-        return hello + 321
-`;
-python`atomic()`.then(x => assert.equal(x, 444));
+      hello = 123
+      return hello + 321
+  `;
+  let atomic = python`atomic()`;
+  assert.equal(atomic, 444);
+});
 ```
 
 ## python.stdin, python.stdout, python.stderr
@@ -98,39 +105,41 @@ python`atomic()`.then(x => assert.equal(x, 444));
 Pipes going into the Python process, separate from execution & evaluation.  This can be used to stream data between processes, without buffering.
 
 ```javascript
+'use strict';
+
 let Promise = require('bluebird');
 let fs = Promise.promisifyAll(require('fs'));
 
-let fileWriter = fs.createWriteStream('output.txt');
-
-python.stdout.pipe(fileWriter);
+let python = pythonBridge({stdout: 'pipe'});
 
 // listen on Python process's stdout
-python.ex`
+Promse.using(python, function *(python) {
+  let fileWriter = fs.createWriteStream('output.txt');
+  python.stdout.pipe(fileWriter);
+
+  yield python`
     import sys
     for line in sys.stdin:
-        sys.stdout.write(line)
-        sys.stdout.flush()
-`.then(function () {
-    fileWriter.end();
-    fs.readFileAsync('output.txt', {encoding: 'utf8'}).then(x => assert.equal(x, 'hello\nworld\n'));
+      sys.stdout.write(line)
+      sys.stdout.flush()
+  `;
+  fileWriter.end();
+  let output = yield fs.readFileAsync('output.txt', {encoding: 'utf8'});
+  assert.equal(output, 'hello\nworld\n'));
 });
 
 // write to Python process's stdin
-python.stdin.write('hello\n');
-setTimeout(() => {
-    python.stdin.write('world\n');
-    python.stdin.end();
-}, 10);
+Promse.using(python, function *(python) {
+  python.stdin.write('hello\n');
+  yield Promise.delay(10);
+  python.stdin.write('world\n');
+  python.stdin.end();
+});
 ```
 
 ## python.end()
 
 Stops accepting new Python commands, and waits for queue to finish then gracefully closes the Python process.
-
-## python.disconnect()
-
-_Alias to [`python.end()`](#python-end)_
 
 ## python.kill([signal])
 
@@ -138,16 +147,24 @@ Send signal to Python process, same as [`child_process child.kill`](https://node
 
 ```javascript
 let Promise = require('bluebird');
+let pythonResource = pythonBridge();
 
-python.ex`
-    from time import sleep
-    sleep(9000)
-`.timeout(100).then(x => {
-    assert.ok(false);
-}).catch(Promise.TimeoutError, (exit_code) => {
-    console.error('Python process taking too long, restarted.');
-    python.kill('SIGKILL');
-    python = pythonBridge();
+Promise.using(pythonResource, function *(python) {
+  try {
+    yield python`
+        from time import sleep
+        sleep(9000)
+    `.timeout(100);
+    assert.ok(false); // shouldn't ever hit this
+  } catch (e) {
+    if (e instanceof Promise.TimeoutError) {
+      console.error('Python process taking too long, restarted.');
+      python.kill('SIGKILL');
+      pythonResource = pythonBridge();
+    } else {
+      throw e;
+    }
+  }
 });
 ```
 
@@ -155,41 +172,32 @@ python.ex`
 
 We can use Bluebird's [`promise.catch(...)`](http://bluebirdjs.com/docs/api/catch.html) catch handler in combination with Python's typed Exceptions to make exception handling easy.
 
-
-## python.Exception
+## pythonBridge.PythonException
 
 Catch any raised Python exception.
 
 ```javascript
-python.ex`
+python`
     hello = 123
     print(hello + world)
     world = 321
-`.catch(python.Exception, () => console.log('Woops!  `world` was used before it was defined.'));
+`.catch(PythonException, () => console.log('Woops!  `world` was used before it was defined.'));
 ```
 
-## python.isException(name)
+## pythonBridge.isPythonException
 
 Catch a Python exception matching the passed name.
 
 ```javascript
 function pyDivide(numerator, denominator) {
     return python`${numerator} / ${denominator}`
-        .catch(python.isException('ZeroDivisionError'), () => Promise.resolve(Infinity));
+        .catch(isPythonException('ZeroDivisionError'), () => Promise.resolve(Infinity));
 }
 pyDivide(1, 0).then(x => {
     assert.equal(x, Infinity);
     assert.equal(1 / 0, Infinity);
 });
 ```
-
-## pythonBridge.PythonException
-
-_Alias to `python.Exception`, this is useful if you want to import the function to at the root of the module._
-
-## pythonBridge.isPythonException
-
-_Alias to `python.isException`, this is useful if you want to import the function to at the root of the module._
 
 ----
 

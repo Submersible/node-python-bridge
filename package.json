@@ -1,7 +1,8 @@
 {
   "name": "python-bridge",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
+  "repository": "Submersible/node-python-bridge",
   "main": "index.js",
   "scripts": {
     "test": "tap test.js"
