@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
 
-import six
 import os
 import sys
 import json
 import traceback
 
 NODE_CHANNEL_FD = int(os.environ['NODE_CHANNEL_FD'])
+UNICODE_TYPE = unicode if sys.version_info[0] == 2 else str
 
 
 def format_exception(t=None, e=None, tb=None):
@@ -44,7 +44,7 @@ if __name__ == '__main__':
             # Assert data saneness
             if data['type'] not in ['execute', 'evaluate']:
                 raise Exception('Python bridge call `type` must be `execute` or `evaluate`')
-            if not isinstance(data['code'], six.string_types):
+            if not isinstance(data['code'], UNICODE_TYPE):
                 raise Exception('Python bridge call `code` must be a string.')
 
             # Run Python code
