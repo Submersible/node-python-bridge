@@ -46,3 +46,6 @@ before_script:
     - node --version
 script:
     npm test
+cache:
+  directories:
+    - node_modules
