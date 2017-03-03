@@ -4,9 +4,34 @@ import os
 import sys
 import json
 import traceback
+import platform
+import struct
 
 NODE_CHANNEL_FD = int(os.environ['NODE_CHANNEL_FD'])
 UNICODE_TYPE = unicode if sys.version_info[0] == 2 else str
+
+
+if platform.system() == 'Windows':
+    # hacky reimplementation of https://github.com/nodejs/node/blob/master/deps/uv/src/win/pipe.c
+    def read_data(f):
+        header = f.read(16)
+        if not header:
+            return header
+        try:
+            msg_length, = struct.unpack('<Q', header[8:])
+            return f.read(msg_length)
+        except:
+            raise ValueError('Error parsing msg with header: {}'.format(repr(header)))
+    def write_data(f, data):
+        header = struct.pack('<Q', 1) + struct.pack('<Q', len(data))
+        f.write(header + data)
+        f.flush()
+else:
+    def read_data(f):
+        return reader.readline()
+    def write_data(f, data):
+        f.write(data)
+        f.flush()
 
 
 def format_exception(t=None, e=None, tb=None):
@@ -30,16 +55,19 @@ def format_exception(t=None, e=None, tb=None):
 
 
 if __name__ == '__main__':
-    writer = os.fdopen(NODE_CHANNEL_FD, 'w')
-    reader = os.fdopen(NODE_CHANNEL_FD, 'r')
+    writer = os.fdopen(NODE_CHANNEL_FD, 'wb')
+    reader = os.fdopen(NODE_CHANNEL_FD, 'rb')
 
     while True:
         try:
             # Read new command
-            line = reader.readline()
+            line = read_data(reader)
             if not line:
                 break
-            data = json.loads(line)
+            try:
+                data = json.loads(line.decode('utf-8'))
+            except ValueError:
+                raise ValueError('Could not decode IPC data:\n{}'.format(repr(line)))
 
             # Assert data saneness
             if data['type'] not in ['execute', 'evaluate']:
@@ -57,8 +85,8 @@ if __name__ == '__main__':
             t, e, tb = sys.exc_info()
             response = dict(type='exception', value=format_exception(t, e, tb))
 
-        writer.write(json.dumps(response, separators=(',', ':')) + '\n')
-        writer.flush()
+        data = json.dumps(response, separators=(',', ':')).encode('utf-8') + b'\n'
+        write_data(writer, data)
 
     # Closing is messy
     try:

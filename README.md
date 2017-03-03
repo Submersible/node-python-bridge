@@ -1,6 +1,6 @@
-# python-bridge [![Build Status](https://secure.travis-ci.org/Submersible/node-python-bridge.png?branch=master)](http://travis-ci.org/Submersible/node-python-bridge)
+# python-bridge [![Build Status](https://secure.travis-ci.org/Submersible/node-python-bridge.png?branch=master)](http://travis-ci.org/Submersible/node-python-bridge) [![Build Status](https://ci.appveyor.com/api/projects/status/8h64yyve684nn900/branch/master?svg=true)](https://ci.appveyor.com/project/munro/node-python-bridge/branch/master)
 
-Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below.
+Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below, supports Windows.
 
 ```
 npm install python-bridge
@@ -198,6 +198,7 @@ _Alias to `python.isException`, this is useful if you want to import the functio
 * Does not affect Python's stdin, stdout, or stderr pipes.
 * Exception stack traces forwarded to Node for easy debugging.
 * Python 2 & 3 support, end-to-end tested.
+* Windows support, end-to-end tested.
 * Command queueing, with promises.
 * Long running Python sessions.
 * ES6 template tags for easy interpolation & multiline code.
