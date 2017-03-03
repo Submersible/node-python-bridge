@@ -20,7 +20,7 @@ install:
   - "python --version"
   - "node --version"
   - "npm --version"
-  - "npm install"
+  - "npm install -d"
 
 test_script:
   - "npm test"
