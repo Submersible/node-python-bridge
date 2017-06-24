@@ -8,6 +8,23 @@ let Promise = require('bluebird');
 let mkdirTemp = Promise.promisify(require('temp').mkdir);
 let path = require('path');
 
+test('leave __future__ alone!', t => {
+    t.plan(2);
+
+    let python = pythonBridge();
+    python.ex`import sys`;
+    python`sys.version_info.major <= 2`.then(byte_strings => {
+        if (!byte_strings) {
+            return;
+        }
+        python`type('').__name__`.then(x => t.equal(x, 'str'));
+        python.ex`from __future__ import unicode_literals`;
+        python`type('').__name__`.then(x => t.equal(x, 'unicode'));
+    }).finally(() => {
+        python.end();
+    });
+});
+
 test('readme', t => {
     t.test('example', t => {
         t.plan(2);
@@ -237,22 +254,4 @@ test('json interpolation', t => {
     t.equal(pythonBridge.json`hello(${'world'})`, 'hello("world")');
     t.equal(pythonBridge.json`hello(${'world'}, ${[1, 2, 3]})`, 'hello("world", [1,2,3])');
     t.end();
-});
-
-
-test('leave __future__ alone!', t => {
-    t.plan(2);
-
-    let python = pythonBridge();
-    python`sys.version_info.major <= 2`.then(byte_strings => {
-        if (!byte_strings) {
-            return;
-        }
-        python`type('').__name__`.then(x => t.equal(x, 'str'));
-        python.ex`from __future__ import unicode_literals`;
-        python`type('').__name__`.then(x => t.equal(x, 'unicode'));
-
-    }).finally(() => {
-        python.end();
-    });
 });
