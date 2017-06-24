@@ -13,13 +13,14 @@ test('leave __future__ alone!', t => {
 
     let python = pythonBridge();
     python.ex`import sys`;
-    python`sys.version_info.major <= 2`.then(byte_strings => {
-        if (!byte_strings) {
-            return;
-        }
+    python`sys.version_info.major > 2`.then(unicode_strings => {
         python`type('').__name__`.then(x => t.equal(x, 'str'));
         python.ex`from __future__ import unicode_literals`;
-        python`type('').__name__`.then(x => t.equal(x, 'unicode'));
+        if (unicode_strings) {
+            python`type('').__name__`.then(x => t.equal(x, 'str'));
+        } else {
+            python`type('').__name__`.then(x => t.equal(x, 'unicode'));
+        }
     }).finally(() => {
         python.end();
     });
