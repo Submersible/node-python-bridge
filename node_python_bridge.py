@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from codeop import Compile
 import os
 import sys
 import json
@@ -9,6 +10,16 @@ import struct
 
 NODE_CHANNEL_FD = int(os.environ['NODE_CHANNEL_FD'])
 UNICODE_TYPE = unicode if sys.version_info[0] == 2 else str
+
+if sys.version_info[0] <= 2:
+    # print('PY2')
+    def _exec(_code_, _globs_):
+        exec('exec _code_ in _globs_')
+else:
+    _exec = getattr(__builtins__, 'exec')
+
+_locals = {'__name__': '__console__', '__doc__': None}
+_compile = Compile()
 
 
 if platform.system() == 'Windows':
@@ -77,10 +88,11 @@ if __name__ == '__main__':
 
             # Run Python code
             if data['type'] == 'execute':
-                exec(data['code'])
+                _exec(_compile(data['code'], '<input>', 'exec'), _locals)
                 response = dict(type='success')
             else:
-                response = dict(type='success', value=eval(data['code']))
+                value = eval(_compile(data['code'], '<input>', 'eval'), _locals)
+                response = dict(type='success', value=value)
         except:
             t, e, tb = sys.exc_info()
             response = dict(type='exception', value=format_exception(t, e, tb))

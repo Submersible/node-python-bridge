@@ -28,6 +28,7 @@ env:
     # - NODE_VERSION="4.0"
 python:
     - "nightly"
+    - "3.6"
     - "3.5"
     - "3.4"
     - "3.3"

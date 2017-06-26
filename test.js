@@ -8,6 +8,24 @@ let Promise = require('bluebird');
 let mkdirTemp = Promise.promisify(require('temp').mkdir);
 let path = require('path');
 
+test('leave __future__ alone!', t => {
+    t.plan(2);
+
+    let python = pythonBridge();
+    python.ex`import sys`;
+    python`sys.version_info[0] > 2`.then(py3 => {
+        python`type('').__name__`.then(x => t.equal(x, 'str'));
+        python.ex`from __future__ import unicode_literals`;
+        if (py3) {
+            python`type('').__name__`.then(x => t.equal(x, 'str'));
+        } else {
+            python`type('').__name__`.then(x => t.equal(x, 'unicode'));
+        }
+    }).finally(() => {
+        python.end();
+    });
+});
+
 test('readme', t => {
     t.test('example', t => {
         t.plan(2);
