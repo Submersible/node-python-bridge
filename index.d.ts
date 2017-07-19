@@ -1,16 +1,12 @@
-import {
-    Writable, 
-    Readable,
-}               from "stream";
-
 declare module "python-bridge" {
   interface pythonBridge extends Function {
-      (option?: PythonBridgeOptions): PythonBridge;
+      (options?: PythonBridgeOptions): PythonBridge;
   }
+
   export const pythonBridge: pythonBridge
 
   export interface PythonBridgeOptions {
-    intepreter: string;
+    intepreter?: string;
     stdio?: [PipeStdin, PipeStdout, PipeStderr];
     cwd?: string;
     env?: { [key:string]: string; };
@@ -26,13 +22,14 @@ declare module "python-bridge" {
     end(): Promise<void>;  
     disconnect(): Promise<void>;
     kill(signal: string | number): void;
-    stdin: Writable;
-    stdout: Readable;
-    stderr: Readable;
+    stdin: NodeJS.WritableStream;
+    stdout: NodeJS.ReadableStream;
+    stderr: NodeJS.ReadableStream;
     connected: boolean;
   }
 
-  export function isPythonException(e: any): boolean;
+  export function isPythonException(name: string): (e: any) => boolean;
+  export function isPythonException(name: string, e: any): boolean;
 
   export class PythonException extends Error {
     exception: {
@@ -50,7 +47,7 @@ declare module "python-bridge" {
   }
 
   export type Pipe = "pipe" | "ignore" | "inherit";
-  export type PipeStdin = Pipe | Readable;
-  export type PipeStdout = Pipe | Writable;
-  export type PipeStderr = Pipe | Writable;
+  export type PipeStdin = Pipe | NodeJS.ReadableStream;
+  export type PipeStdout = Pipe | NodeJS.WritableStream;
+  export type PipeStderr = Pipe | NodeJS.WritableStream;
 }

@@ -13,7 +13,6 @@
     , "noImplicitAny": false
     , "noUnusedParameters": false
     , "noImplicitThis": true
-
     , "noLib": false
     , "traceResolution": false
   }

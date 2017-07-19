@@ -9,7 +9,9 @@
     "lint:ts": "tslint --project tsconfig.json --type-check",
     "test": "npm run test:js && npm run test:ts",
     "test:js": "tap test.js",
-    "test:ts": "ts-node test.ts"
+    "test:ts": "ts-node test.ts",
+
+    "test_ts": "ts-node node_modules/blue-tape/bin/blue-tape test_typescript.ts"
   },
   "repository": {
     "type": "git",
@@ -31,10 +33,11 @@
   },
   "devDependencies": {
     "@types/node": "^8.0.14",
-    "tap": "^2.3.4",
+    "tap": "^10.7.0",
     "temp": "^0.8.3",
     "ts-node": "^3.2.0",
     "tslint": "^5.5.0",
+    "blue-tape": "^1.0.0",
     "typescript": "^2.4.1"
   }
 }
