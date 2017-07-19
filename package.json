@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "npm run lint:ts",
     "lint:ts": "tslint --project tsconfig.json --type-check",
-    "test": "npm run test:js && npm run test:ts",
+    "test": "npm run lint && npm run test:js && npm run test:ts",
     "test:js": "tap test.js",
     "test:ts": "ts-node test.ts",
     "test_ts": "ts-node node_modules/blue-tape/bin/blue-tape test_typescript.ts"
