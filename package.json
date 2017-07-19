@@ -31,12 +31,13 @@
     "bluebird": "^3.4.6"
   },
   "devDependencies": {
+    "@types/glob": "^5.0.30",
     "@types/node": "^8.0.14",
+    "blue-tape": "^1.0.0",
     "tap": "^10.7.0",
     "temp": "^0.8.3",
     "ts-node": "^3.2.0",
     "tslint": "^5.5.0",
-    "blue-tape": "^1.0.0",
     "typescript": "^2.4.1"
   }
 }
