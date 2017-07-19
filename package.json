@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
-    "test": "tap test.js"
+    "lint": "npm run lint:ts",
+    "lint:ts": "tslint --project tsconfig.json --type-check",
+    "test": "npm run test:js && npm run test:ts",
+    "test:js": "tap test.js",
+    "test:ts": "ts-node test.ts"
   },
   "repository": {
     "type": "git",
@@ -25,7 +30,11 @@
     "bluebird": "^3.4.6"
   },
   "devDependencies": {
+    "@types/node": "^8.0.14",
     "tap": "^2.3.4",
-    "temp": "^0.8.3"
+    "temp": "^0.8.3",
+    "ts-node": "^3.2.0",
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.1"
   }
 }

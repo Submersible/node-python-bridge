@@ -179,4 +179,5 @@ pythonBridge.PythonException = PythonException;
 pythonBridge.PythonBridgeNotConnected = PythonBridgeNotConnected;
 pythonBridge.isPythonException = isPythonException;
 pythonBridge.json = json;
-module.exports = pythonBridge;
+
+module.exports = pythonBridge.pythonBridge = pythonBridge;
