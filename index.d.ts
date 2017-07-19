@@ -1,4 +1,4 @@
-declare module "python-bridge" {
+// declare module "python-bridge" {
   interface pythonBridge extends Function {
       (options?: PythonBridgeOptions): PythonBridge;
   }
@@ -50,4 +50,4 @@ declare module "python-bridge" {
   export type PipeStdin = Pipe | NodeJS.ReadableStream;
   export type PipeStdout = Pipe | NodeJS.WritableStream;
   export type PipeStderr = Pipe | NodeJS.WritableStream;
-}
+// }
