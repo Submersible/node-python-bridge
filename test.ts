@@ -7,9 +7,9 @@ const { test } = require('tap');
 test('TypeScript', async t => {
     t.plan(1);
 
-    let python = pythonBridge();
-    let a = 123, b = 321;
-    python.ex`
+    const python = pythonBridge();
+    const a = 123, b = 321;
+    await python.ex`
         def hello(a, b):
             return a + b
     `;
