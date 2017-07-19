@@ -123,12 +123,16 @@ class PythonBridgeNotConnected extends Error {
     }
 }
 
-function isPythonException(name) {
-    return exc => (
+function isPythonException(name, exc) {
+    const thunk = exc => (
         exc instanceof PythonException &&
         exc.exception &&
         exc.exception.type.name === name
     );
+    if (exc === undefined) {
+        return thunk;
+    }
+    return thunk(exc);
 }
 
 function singleQueue() {
@@ -175,6 +179,7 @@ function json(text_nodes) {
     return dedent(text_nodes.reduce((cur, acc, i) => cur + JSON.stringify(values[i - 1]) + acc));
 }
 
+pythonBridge.pythonBridge = pythonBridge;
 pythonBridge.PythonException = PythonException;
 pythonBridge.PythonBridgeNotConnected = PythonBridgeNotConnected;
 pythonBridge.isPythonException = isPythonException;
