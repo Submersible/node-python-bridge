@@ -1,13 +1,8 @@
 'use strict';
 
-const {
-    pythonBridge,
-    PythonException,
-    isPythonException,
- }                      = require('./');
-// let pythonBridge = require('./');
-// let PythonException = pythonBridge.PythonException;
-// let isPythonException = pythonBridge.isPythonException;
+let pythonBridge = require('./');
+let PythonException = pythonBridge.PythonException;
+let isPythonException = pythonBridge.isPythonException;
 let test = require('tap').test;
 let Promise = require('bluebird');
 let mkdirTemp = Promise.promisify(require('temp').mkdir);
