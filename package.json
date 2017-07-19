@@ -31,7 +31,6 @@
     "bluebird": "^3.4.6"
   },
   "devDependencies": {
-    "@types/glob": "^5.0.30",
     "@types/node": "^8.0.14",
     "blue-tape": "^1.0.0",
     "tap": "^10.7.0",
