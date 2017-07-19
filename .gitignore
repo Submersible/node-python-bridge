@@ -25,25 +25,5 @@ build/Release
 
 # Dependency directory
 node_modules
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-npm-shrinkwrap.json
 package-lock.json
-
-.*.swp
-
-# TAP Coverage
-coverage
-.nyc_output
-
-DS_Store
-yarn.lock
-.yarn/
-.yarn-cache/
-.v8flags.*
-tags
+test_typescript.js
