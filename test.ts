@@ -14,6 +14,6 @@ test('TypeScript', async t => {
             return a + b
     `;
     const x = await python`hello(${a}, ${b})`
-    t.equal(x, a + b)
+    t.equal(x, a + b, 'should get the same result between node & python')
     python.end();
 });

@@ -10,7 +10,6 @@
     "test": "npm run test:js && npm run test:ts",
     "test:js": "tap test.js",
     "test:ts": "ts-node test.ts",
-
     "test_ts": "ts-node node_modules/blue-tape/bin/blue-tape test_typescript.ts"
   },
   "repository": {
