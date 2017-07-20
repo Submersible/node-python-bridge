@@ -81,7 +81,7 @@ assert.equal(a + b, await python`hello(${a}, ${b})`);
 
 ## python.lock(...).then(...)
 
-Locks access to the Python interpreter so code can be executed atomically.  If possible, it's recommend to define a function in Python to handle atomicity.  
+Locks access to the Python interpreter so code can be executed atomically.  If possible, it's recommend to define a function in Python to handle atomicity.
 
 ```javascript
 const x: number = await python.lock(async python =>{
