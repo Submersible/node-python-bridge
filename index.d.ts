@@ -2,7 +2,6 @@ interface pythonBridge extends Function {
     (options?: PythonBridgeOptions): PythonBridge;
 }
 
-
 export const pythonBridge: pythonBridge
 
 export interface PythonBridgeOptions {
