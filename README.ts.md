@@ -2,6 +2,10 @@
 
 Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below, supports Windows.
 
+# API for TypeScript
+
+[View documentation with TypeScript examples.](README.ts.md)
+
 ```
 npm install python-bridge
 ```
@@ -26,8 +30,6 @@ async function main() {
 
 main().catch(console.error);
 ```
-
-# API
 
 ## var python = pythonBridge(options)
 

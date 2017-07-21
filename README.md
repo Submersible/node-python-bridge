@@ -2,6 +2,10 @@
 
 Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below, supports Windows.
 
+# API
+
+[View documentation for TypeScript examples.](README.ts.md)
+
 ```
 npm install python-bridge
 ```
@@ -22,8 +26,6 @@ python`sorted(${list})`.then(x => assert.deepEqual(x, list.sort()));
 
 python.end();
 ```
-
-# API
 
 ## var python = pythonBridge(options)
 
