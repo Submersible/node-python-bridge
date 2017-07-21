@@ -4,7 +4,7 @@ Most robust and simple Python bridge.  [Features](#features), and [comparisons](
 
 # API
 
-[View documentation for TypeScript examples.](README.ts.md)
+[View documentation with TypeScript examples.](README.ts.md)
 
 ```
 npm install python-bridge
