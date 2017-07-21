@@ -1,1 +1,10 @@
+.*.swp
+.DS_Store
+.node_repl_history
+.npm
 node_modules
+npm-debug.log*
+npm-shrinkwrap.json
+package-lock.json
+package-lock.json
+test_typescript.js

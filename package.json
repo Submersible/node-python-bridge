@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
   "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
-    "test": "tap test.js"
+    "lint": "npm run lint:ts",
+    "lint:ts": "tslint --project tsconfig.json --type-check",
+    "test": "npm run lint && npm run test:js && npm run test:ts",
+    "test:js": "tap test.js",
+    "test:ts": "tsc --lib ES2015 test_typescript.ts && tap test_typescript.js"
   },
   "repository": {
     "type": "git",
@@ -22,10 +27,13 @@
   "author": "Ryan Munro <ryan@submersible.io>",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^3.4.6"
+    "bluebird": "^3.5.0"
   },
   "devDependencies": {
-    "tap": "^2.3.4",
-    "temp": "^0.8.3"
+    "@types/node": "^8.0.14",
+    "tap": "^10.7.0",
+    "temp": "^0.8.3",
+    "tslint": "^5.5.0",
+    "typescript": "^2.4.1"
   }
 }
