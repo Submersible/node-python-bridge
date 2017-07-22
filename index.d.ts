@@ -52,7 +52,7 @@ export type PipeStderr = Pipe | NodeJS.WritableStream;
 
 export namespace Bluebird {
   interface Promise<T> extends _Promise<T>  {
-    timeout(number): Bluebird.Promise<T>;
+    timeout(milliseconds: number): Bluebird.Promise<T>;
   }
 }
 
