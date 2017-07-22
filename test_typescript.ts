@@ -20,7 +20,7 @@ test('readme', t => {
             python.end();
         }
     });
-    
+
     t.test('expression', async assert => {
         let python = pythonBridge();
         try {
@@ -102,6 +102,7 @@ test('readme', t => {
                     sys.stdout.write(line)
                     sys.stdout.flush()
             `;
+
             // write to Python process's stdin
             python.stdin.write('hello\n');
             await delay(10);
