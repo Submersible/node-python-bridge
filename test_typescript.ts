@@ -1,7 +1,7 @@
-import { test } from 'blue-tape';
+import { test } from 'tap';
 import { join as path_join } from 'path';
-import { promisify, promisifyAll } from 'bluebird';
-import { pythonBridge, PythonException, isPythonException } from './';
+import { promisify } from 'bluebird';
+import { pythonBridge, PythonException, isPythonException } from './index';
 
 const mkdirTemp = promisify(require('temp').mkdir);
 
@@ -102,7 +102,6 @@ test('readme', t => {
                     sys.stdout.write(line)
                     sys.stdout.flush()
             `;
-            
             // write to Python process's stdin
             python.stdin.write('hello\n');
             await delay(10);
@@ -176,4 +175,6 @@ test('readme', t => {
 
         python.end();
     });
+
+    t.end();
 });

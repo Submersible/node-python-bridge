@@ -2,6 +2,10 @@
 
 Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below, supports Windows.
 
+# API for TypeScript
+
+[View documentation with JavaScript examples.](README.ts.md)
+
 ```
 npm install python-bridge
 ```
@@ -26,8 +30,6 @@ async function main() {
 
 main().catch(console.error);
 ```
-
-# API
 
 ## var python = pythonBridge(options)
 
@@ -81,7 +83,7 @@ assert.equal(a + b, await python`hello(${a}, ${b})`);
 
 ## python.lock(...).then(...)
 
-Locks access to the Python interpreter so code can be executed atomically.  If possible, it's recommend to define a function in Python to handle atomicity.  
+Locks access to the Python interpreter so code can be executed atomically.  If possible, it's recommend to define a function in Python to handle atomicity.
 
 ```javascript
 const x: number = await python.lock(async python =>{
