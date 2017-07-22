@@ -11,7 +11,7 @@
     , "noImplicitReturns": true
     , "noFallthroughCasesInSwitch": true
     , "strictNullChecks": true
-    , "noImplicitAny": false
+    , "noImplicitAny": true
     , "noUnusedParameters": false
     , "noImplicitThis": true
     , "noLib": false
