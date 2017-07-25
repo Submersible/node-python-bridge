@@ -5,7 +5,7 @@ interface pythonBridge extends Function {
 export const pythonBridge: pythonBridge
 
 export interface PythonBridgeOptions {
-  intepreter?: string;
+  python?: string;
   stdio?: [PipeStdin, PipeStdout, PipeStderr];
   cwd?: string;
   env?: { [key:string]: string; };
@@ -52,7 +52,7 @@ export type PipeStderr = Pipe | NodeJS.WritableStream;
 
 export namespace Bluebird {
   interface Promise<T> extends _Promise<T>  {
-    timeout(number): Bluebird.Promise<T>;
+    timeout(milliseconds: number): Bluebird.Promise<T>;
   }
 }
 
