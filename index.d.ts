@@ -5,7 +5,7 @@ interface pythonBridge extends Function {
 export const pythonBridge: pythonBridge
 
 export interface PythonBridgeOptions {
-  intepreter?: string;
+  python?: string;
   stdio?: [PipeStdin, PipeStdout, PipeStderr];
   cwd?: string;
   env?: { [key:string]: string; };
