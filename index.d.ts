@@ -8,7 +8,7 @@ export interface PythonBridgeOptions {
   python?: string;
   stdio?: [PipeStdin, PipeStdout, PipeStderr];
   cwd?: string;
-  env?: { [key:string]: string; };
+  env?: { [key: string]: string | undefined; };
   uid?: number;
   gid?: number;
 }
