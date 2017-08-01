@@ -1,6 +1,6 @@
 {
   "name": "python-bridge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
   "main": "index.js",
   "types": "index.d.ts",
