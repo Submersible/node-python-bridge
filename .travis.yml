@@ -2,6 +2,8 @@ language: python
 os:
     - "linux"
 env:
+    - NODE_VERSION="9"
+    - NODE_VERSION="8"
     - NODE_VERSION="7.5"
     # - NODE_VERSION="7.3"
     # - NODE_VERSION="7.2"
