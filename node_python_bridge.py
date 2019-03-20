@@ -7,6 +7,7 @@ import json
 import traceback
 import platform
 import struct
+import math
 
 NODE_CHANNEL_FD = int(os.environ['NODE_CHANNEL_FD'])
 UNICODE_TYPE = unicode if sys.version_info[0] == 2 else str
@@ -65,6 +66,15 @@ def format_exception(t=None, e=None, tb=None):
     )
 
 
+class JavaScriptEncoder(json.JSONEncoder):
+    def default(self, o):
+        if math.isnan(o):
+            return 'NaN'
+        if math.isinf(o):
+            return 'Infinity' if o > 0 else '-Infinity'
+        return o.__dict__
+
+
 if __name__ == '__main__':
     writer = os.fdopen(NODE_CHANNEL_FD, 'wb')
     reader = os.fdopen(NODE_CHANNEL_FD, 'rb')
@@ -92,7 +102,7 @@ if __name__ == '__main__':
                 response = dict(type='success')
             else:
                 value = eval(_compile(data['code'], '<input>', 'eval'), _locals)
-                response = dict(type='success', value=value)
+                response = dict(type='success', value=json.dumps(value, separators=(',', ':'), cls=JavaScriptEncoder))
         except:
             t, e, tb = sys.exc_info()
             response = dict(type='exception', value=format_exception(t, e, tb))

@@ -26,7 +26,6 @@ function pythonBridge(opts) {
         function wrapper() {
             self = self || wrapper;
             let code = json.apply(this, arguments);
-            let on_message, on_close;
 
             if (!(this && this.connected || self.connected)) {
                 return Promise.reject(new PythonBridgeNotConnected());
@@ -40,7 +39,7 @@ function pythonBridge(opts) {
                 function onMessage(data) {
                     ps.removeListener('close', onClose);
                     if (data && data.type && data.type === 'success') {
-                        resolve(data.value);
+                        resolve(eval(`(${data.value})`));
                     } else if (data && data.type && data.type === 'exception') {
                         reject(new PythonException(data.value));
                     } else {
@@ -176,7 +175,38 @@ function dedent(code) {
 
 function json(text_nodes) {
     let values = Array.prototype.slice.call(arguments, 1);
-    return dedent(text_nodes.reduce((cur, acc, i) => cur + JSON.stringify(values[i - 1]) + acc));
+    return dedent(text_nodes.reduce((cur, acc, i) => {
+        return cur + serializePython(values[i - 1]) + acc;
+    }));
+}
+
+function serializePython(value) {
+    if (value === null || typeof value === 'undefined') {
+        return 'None';
+    } else if (value === true) {
+        return 'True';
+    } else if (value === false) {
+        return 'False';
+    } else if (value === Infinity) {
+        return "float('inf')";
+    } else if (value === -Infinity) {
+        return "float('-inf')";
+    } else if (value instanceof Array) {
+        return `[${value.map(serializePython).join(', ')}]`;
+    } else if (typeof value === 'number') {
+        if (isNaN(value)) {
+            return "float('nan')";
+        }
+        return JSON.stringify(value);
+    } else if (typeof value === 'string') {
+        return JSON.stringify(value);
+    } else if (value instanceof Map) {
+        const props = Array.from(value.entries()).map(kv => `${serializePython(kv[0])}: ${serializePython(kv[1])}`);
+        return `{${props.join(', ')}}`;
+    } else {
+        const props = Object.keys(value).map(k => `${serializePython(k)}: ${serializePython(value[k])}`);
+        return `{${props.join(', ')}}`;
+    }
 }
 
 pythonBridge.pythonBridge = pythonBridge;
@@ -184,5 +214,6 @@ pythonBridge.PythonException = PythonException;
 pythonBridge.PythonBridgeNotConnected = PythonBridgeNotConnected;
 pythonBridge.isPythonException = isPythonException;
 pythonBridge.json = json;
+pythonBridge.serializePython = serializePython;
 
 module.exports = pythonBridge.pythonBridge = pythonBridge;
