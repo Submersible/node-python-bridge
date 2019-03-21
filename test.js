@@ -253,6 +253,24 @@ test('json interpolation', t => {
     `, 'def hello(a, b):\n    return a + b\n');
     t.equal(pythonBridge.json`hello()`, 'hello()');
     t.equal(pythonBridge.json`hello(${'world'})`, 'hello("world")');
-    t.equal(pythonBridge.json`hello(${'world'}, ${[1, 2, 3]})`, 'hello("world", [1,2,3])');
+    t.equal(pythonBridge.json`hello(${'world'}, ${[1, 2, 3]})`, 'hello("world", [1, 2, 3])');
+    t.equal(pythonBridge.json`hello(${new Map([[1, 2], [3, 4]])})`, 'hello({1: 2, 3: 4})');
+    t.equal(pythonBridge.json`hello(${NaN}, ${Infinity}, ${-Infinity})`, "hello(float('nan'), float('inf'), float('-inf'))");
     t.end();
+});
+
+test('bug #22 returning NaN or infinity does not work', t => {
+    t.plan(1);
+    const s = {a: NaN, b: Infinity, c: -Infinity};
+    const python = pythonBridge();
+    python`(lambda x: x)(${s})`.then(x => t.deepEqual(x, s));
+    python.end();
+});
+
+test('bug #24 support more than just numbers and strings', t => {
+    t.plan(1);
+    const s = {a: 'asdf', b: 1, c: true, d: [1, 2, null]};
+    const python = pythonBridge();
+    python`(lambda x: x)(${s})`.then(x => t.deepEqual(x, s));
+    python.end();
 });
