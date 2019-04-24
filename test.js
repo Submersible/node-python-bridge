@@ -4,9 +4,9 @@ let pythonBridge = require('./');
 let PythonException = pythonBridge.PythonException;
 let isPythonException = pythonBridge.isPythonException;
 let test = require('tap').test;
-let Promise = require('bluebird');
-let mkdirTemp = Promise.promisify(require('temp').mkdir);
 let path = require('path');
+const promisify = require('es6-promisify').promisify;
+const mkdirTemp = promisify(require('temp').mkdir);
 
 test('leave __future__ alone!', t => {
     t.plan(2);
@@ -21,7 +21,9 @@ test('leave __future__ alone!', t => {
         } else {
             python`type('').__name__`.then(x => t.equal(x, 'unicode'));
         }
-    }).finally(() => {
+    }).then(() => {
+        python.end();
+    }, () => {
         python.end();
     });
 });
@@ -81,13 +83,16 @@ test('readme', t => {
             }, 100));
         }).then(x => t.equal(x, 444));
 
-        python`hello + 321`.catch(isPythonException('NameError'), () => t.ok(true));
+        python`hello + 321`.catch(e => {
+            if (isPythonException('NameError', e)) {
+                t.ok(true);
+            }
+        });
         python.ex`hello = 123`;
         python`hello + 321`.then(x => t.equal(x, 444));
 
         python.disconnect();
     });
-
 
     t.test('lock recommended', t => {
         t.plan(1);
@@ -111,9 +116,8 @@ test('readme', t => {
         mkdirTemp('node-python-bridge-test').then(tempdir => {
             const OUTPUT = path.join(tempdir, 'output.txt');
 
-            let Promise = require('bluebird');
-            let fs = Promise.promisifyAll(require('fs'));
-
+            const fs = require('fs');
+            const readFileAsync = promisify(fs.readFile);
             let fileWriter = fs.createWriteStream(OUTPUT);
 
             python.stdout.pipe(fileWriter);
@@ -126,7 +130,7 @@ test('readme', t => {
                     sys.stdout.flush()
             `.then(function () {
                 fileWriter.end();
-                fs.readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
+                readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
                     t.equal(x.replace(/\r/g, ''), 'hello\nworld\n')
                 });
             });
@@ -147,24 +151,22 @@ test('readme', t => {
 
         let python = pythonBridge();
 
-        let Promise = require('bluebird');
-
-        python.ex`
+        promiseTimeout(python.ex`
             from time import sleep
             sleep(9000)
-        `.timeout(100).then(x => {
+        `, 100).then(x => {
             t.ok(false);
-        }).catch(Promise.TimeoutError, exit_code => {
-            python.kill('SIGKILL');
-            t.ok(true);
-            python = pythonBridge();
+        }).catch(e => {
+            if (e instanceof PromiseTimeout) {
+                python.kill('SIGKILL');
+                t.ok(true);
+                python = pythonBridge();
+            }
         });
         setTimeout(() => {
             python`1 + 2`.then(x => t.equal(x, 3));
             python.disconnect();
         }, 200);
-
-        // python.disconnect();
     });
 
     t.test('exceptions', t => {
@@ -176,17 +178,29 @@ test('readme', t => {
             hello = 123
             print(hello + world)
             world = 321
-        `.catch(python.Exception, () => t.ok(true));
+        `.catch(e => {
+            if (e instanceof python.Exception) {
+                t.ok(true);
+            }
+        });
 
         python.ex`
             hello = 123
             print(hello + world)
             world = 321
-        `.catch(pythonBridge.PythonException, () => t.ok(true));
+        `.catch(e => {
+            if (e instanceof pythonBridge.PythonException) {
+                t.ok(true);
+            }
+        });
 
         function pyDivide(numerator, denominator) {
             return python`${numerator} / ${denominator}`
-                .catch(python.isException('ZeroDivisionError'), () => Promise.resolve(Infinity));
+                .catch(e => {
+                    if (python.isException('ZeroDivisionError', e)) {
+                        return Promise.resolve(Infinity);
+                    }
+                });
         }
         pyDivide(1, 0).then(x => {
             t.equal(x, Infinity);
@@ -195,7 +209,11 @@ test('readme', t => {
         pyDivide(6, 2).then(x => t.equal(x, 3));
 
         python`1 / 0`
-            .catch(pythonBridge.isPythonException('ZeroDivisionError'), () => Promise.resolve(Infinity))
+            .catch(e => {
+                if (pythonBridge.isPythonException('ZeroDivisionError', e)) {
+                    return Promise.resolve(Infinity);
+                }
+            })
             .then(x => t.equal(x, 1 / 0));
 
         python.disconnect();
@@ -218,14 +236,18 @@ test('nested locks', t => {
         });
         return new Promise(resolve => setTimeout(() => {
             python.ex`del hello`.then(() => {
-                return Promise.all([$value1, $value2]).spread((value1, value2) => {
-                    resolve(value1 + value2);
+                return Promise.all([$value1, $value2]).then((args) => {
+                    resolve(args[0] + args[1]);
                 })
             });
         }, 100));
     }).then(x => t.equal(x, 1443));
 
-    python`hello + 808`.catch(isPythonException('NameError'), () => t.ok(true));
+    python`hello + 808`.catch(e => {
+        if (isPythonException('NameError', e)) {
+            t.ok(true);
+        }
+    });
     python.ex`hello = 123`;
     python`hello + 321`.then(x => t.equal(x, 444));
 
@@ -238,11 +260,11 @@ test('exceptions', t => {
     let python = pythonBridge();
     python`1 / 0`.catch(() => t.ok(true));
     python`1 / 0`
-        .catch(ReferenceError, () => t.ok(false))
-        .catch(PythonException, () => t.ok(true));
+        .catch(e => { if (e instanceof ReferenceError) { t.ok(false); } else { return Promise.reject(e); }})
+        .catch(e => { if (e instanceof PythonException) { t.ok(true); }});
     python`1 / 0`
-        .catch(isPythonException('IOError'), () => t.ok(false))
-        .catch(isPythonException('ZeroDivisionError'), () => t.ok(true));
+        .catch(e => { if (isPythonException('IOError', e)) { t.ok(false) } else { return Promise.reject(e); }})
+        .catch(e => { if (isPythonException('ZeroDivisionError', e)) { t.ok(true) }});
     python.end();
 });
 
@@ -274,3 +296,31 @@ test('bug #24 support more than just numbers and strings', t => {
     python`(lambda x: x)(${s})`.then(x => t.deepEqual(x, s));
     python.end();
 });
+
+function promiseTimeout(promise, delay) {
+    return new Promise((resolve, reject) => {
+        let timer = setTimeout(() => {
+            timer = null;
+            reject(new PromiseTimeout());
+        }, delay);
+
+        promise.then(function () {
+            if (timer === null) {
+                return;
+            }
+            clearTimeout(timer);
+            timer = null;
+            resolve.apply(this, arguments);
+        }, function () {
+            if (timer === null) {
+                return;
+            }
+            clearTimeout(timer);
+            timer = null;
+            reject.apply(this, arguments);
+        })
+    })
+}
+
+class PromiseTimeout extends Error {
+}
