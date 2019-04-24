@@ -1,17 +1,16 @@
 'use strict';
 
-let pythonBridge = require('./');
-let PythonException = pythonBridge.PythonException;
-let isPythonException = pythonBridge.isPythonException;
-let test = require('tap').test;
-let path = require('path');
-const promisify = require('es6-promisify').promisify;
+import pythonBridge from './';
+import {PythonException, isPythonException} from './';
+import {test} from 'tap';
+import path from 'path';
+import {promisify} from 'es6-promisify';
 const mkdirTemp = promisify(require('temp').mkdir);
 
 test('leave __future__ alone!', t => {
     t.plan(2);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
     python.ex`import sys`;
     python`sys.version_info[0] > 2`.then(py3 => {
         python`type('').__name__`.then(x => t.equal(x, 'str'));
@@ -32,11 +31,11 @@ test('readme', t => {
     t.test('example', t => {
         t.plan(2);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
         python.ex`import math`;
         python`math.sqrt(9)`.then(x => t.equal(x, 3));
 
-        let list = [3, 4, 2, 1];
+        const list = [3, 4, 2, 1];
         python`sorted(${list})`.then(x => t.deepEqual(x, list.sort()));
 
         python.end();
@@ -45,12 +44,12 @@ test('readme', t => {
     t.test('expression', t => {
         t.plan(2);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
         // Interpolates arguments using JSON serialization.
         python`sorted(${[6, 4, 1, 3]})`.then(x => t.deepEqual(x, [1, 3, 4, 6]));
 
         // Passing key-value arguments
-        let obj = {hello: 'world', foo: 'bar'};
+        const obj = {hello: 'world', foo: 'bar'};
         python`dict(baz=123, **${obj})`.then(x => {
             t.deepEqual(x, {baz: 123, hello: 'world', foo: 'bar'});
         });
@@ -60,8 +59,8 @@ test('readme', t => {
     t.test('execute', t => {
         t.plan(1);
 
-        let python = pythonBridge();
-        let a = 123, b = 321;
+        const python = pythonBridge();
+        const a = 123, b = 321;
         python.ex`
             def hello(a, b):
                 return a + b
@@ -73,11 +72,11 @@ test('readme', t => {
     t.test('lock', t => {
         t.plan(3);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.lock(python => {
             python.ex`hello = 123`;
-            let value = python`hello + 321`;
+            const value = python`hello + 321`;
             return new Promise(resolve => setTimeout(() => {
                 python.ex`del hello`.then(() => resolve(value));
             }, 100));
@@ -97,7 +96,7 @@ test('readme', t => {
     t.test('lock recommended', t => {
         t.plan(1);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.ex`
             def atomic():
@@ -111,14 +110,14 @@ test('readme', t => {
 
     t.test('stdout', t => {
         t.plan(1);
-        let python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
+        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
 
         mkdirTemp('node-python-bridge-test').then(tempdir => {
             const OUTPUT = path.join(tempdir, 'output.txt');
 
             const fs = require('fs');
             const readFileAsync = promisify(fs.readFile);
-            let fileWriter = fs.createWriteStream(OUTPUT);
+            const fileWriter = fs.createWriteStream(OUTPUT);
 
             python.stdout.pipe(fileWriter);
 
@@ -173,7 +172,7 @@ test('readme', t => {
     t.test('exceptions', t => {
         t.plan(6);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.ex`
             hello = 123
@@ -203,6 +202,7 @@ test('readme', t => {
                     }
                 });
         }
+
         pyDivide(1, 0).then(x => {
             t.equal(x, Infinity);
             t.equal(1 / 0, Infinity);
@@ -226,12 +226,12 @@ test('readme', t => {
 test('nested locks', t => {
     t.plan(3);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
 
     python.lock(python => {
         python.ex`hello = 123`;
-        let $value1 = python`hello + 321`;
-        let $value2 = python.lock(python => {
+        const $value1 = python`hello + 321`;
+        const $value2 = python.lock(python => {
             python.ex`world = 808`;
             return python`world + 191`;
         });
@@ -258,14 +258,34 @@ test('nested locks', t => {
 test('exceptions', t => {
     t.plan(3);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
     python`1 / 0`.catch(() => t.ok(true));
     python`1 / 0`
-        .catch(e => { if (e instanceof ReferenceError) { t.ok(false); } else { return Promise.reject(e); }})
-        .catch(e => { if (e instanceof PythonException) { t.ok(true); }});
+        .catch(e => {
+            if (e instanceof ReferenceError) {
+                t.ok(false);
+            } else {
+                return Promise.reject(e);
+            }
+        })
+        .catch(e => {
+            if (e instanceof PythonException) {
+                t.ok(true);
+            }
+        });
     python`1 / 0`
-        .catch(e => { if (isPythonException('IOError', e)) { t.ok(false) } else { return Promise.reject(e); }})
-        .catch(e => { if (isPythonException('ZeroDivisionError', e)) { t.ok(true) }});
+        .catch(e => {
+            if (isPythonException('IOError', e)) {
+                t.ok(false)
+            } else {
+                return Promise.reject(e);
+            }
+        })
+        .catch(e => {
+            if (isPythonException('ZeroDivisionError', e)) {
+                t.ok(true)
+            }
+        });
     python.end();
 });
 

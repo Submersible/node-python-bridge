@@ -1,7 +1,7 @@
-import { test } from 'tap';
-import { join as path_join } from 'path';
-import { promisify } from 'es6-promisify';
-import { pythonBridge, PythonException, isPythonException } from './index';
+import {test} from 'tap';
+import {join as path_join} from 'path';
+import {promisify} from 'es6-promisify';
+import {isPythonException, pythonBridge, PythonException} from './index';
 import pTimeout from 'p-timeout';
 
 const mkdirTemp = promisify(require('temp').mkdir);
@@ -56,7 +56,7 @@ test('readme', t => {
     t.test('lock', async assert => {
         const python = pythonBridge();
         try {
-            const x: number = await python.lock(async python =>{
+            const x: number = await python.lock(async python => {
                 await python.ex`hello = 123`;
                 return await python`hello + 321`;
             });
@@ -71,7 +71,7 @@ test('readme', t => {
     t.test('lock recommended', async assert => {
         const python = pythonBridge();
         try {
-            const x: number = await python.lock(async python =>{
+            const x: number = await python.lock(async python => {
                 await python.ex`hello = 123`;
                 return await python`hello + 321`;
             });
@@ -82,15 +82,14 @@ test('readme', t => {
         }
     });
 
-
     t.test('stdout', async assert => {
-        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]})
+        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
 
         try {
             const tempdir = await mkdirTemp('node-python-bridge-test');
             const OUTPUT = path_join(tempdir, 'output.txt');
 
-            const { createWriteStream, readFile } = require('fs');
+            const {createWriteStream, readFile} = require('fs');
             const readFileAsync = promisify(readFile);
             const fileWriter = createWriteStream(OUTPUT);
 
@@ -170,6 +169,7 @@ test('readme', t => {
             assert.equal(Infinity, await pyDivide(1, 0));
             assert.equal(1 / 0, await pyDivide(1, 0));
         }
+
         await main();
 
         python.end();

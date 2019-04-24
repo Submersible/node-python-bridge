@@ -56,6 +56,7 @@ function pythonBridge(opts) {
                 }
             }));
         }
+
         return wrapper;
     }
 
@@ -142,7 +143,7 @@ function singleQueue() {
             done = resolve;
         });
         return promiseFinally(new Promise((resolve, reject) => {
-            promiseFinally(wait,() => {
+            promiseFinally(wait, () => {
                 promiseTry(f).then(resolve, reject);
             });
         }), () => done());
@@ -209,7 +210,6 @@ function serializePython(value) {
 }
 
 function promiseTry(f) {
-    // return Promise.try(f);
     return new Promise((resolve, reject) => {
         try {
             resolve(f());

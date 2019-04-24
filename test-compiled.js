@@ -1,5 +1,17 @@
 'use strict';
 
+var _ = _interopRequireWildcard(require("./"));
+
+var _tap = require("tap");
+
+var _path = _interopRequireDefault(require("path"));
+
+var _es6Promisify = require("es6-promisify");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj["default"] = obj; return newObj; } }
+
 function _templateObject47() {
   var data = _taggedTemplateLiteral(["(lambda x: x)(", ")"]);
 
@@ -480,21 +492,10 @@ function _templateObject() {
 
 function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
-var pythonBridge = require('./');
-
-var PythonException = pythonBridge.PythonException;
-var isPythonException = pythonBridge.isPythonException;
-
-var test = require('tap').test;
-
-var path = require('path');
-
-var promisify = require('es6-promisify').promisify;
-
-var mkdirTemp = promisify(require('temp').mkdir);
-test('leave __future__ alone!', function (t) {
+var mkdirTemp = (0, _es6Promisify.promisify)(require('temp').mkdir);
+(0, _tap.test)('leave __future__ alone!', function (t) {
   t.plan(2);
-  var python = pythonBridge();
+  var python = (0, _["default"])();
   python.ex(_templateObject());
   python(_templateObject2()).then(function (py3) {
     python(_templateObject3()).then(function (x) {
@@ -517,10 +518,10 @@ test('leave __future__ alone!', function (t) {
     python.end();
   });
 });
-test('readme', function (t) {
+(0, _tap.test)('readme', function (t) {
   t.test('example', function (t) {
     t.plan(2);
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     python.ex(_templateObject7());
     python(_templateObject8()).then(function (x) {
       return t.equal(x, 3);
@@ -533,7 +534,7 @@ test('readme', function (t) {
   });
   t.test('expression', function (t) {
     t.plan(2);
-    var python = pythonBridge(); // Interpolates arguments using JSON serialization.
+    var python = (0, _["default"])(); // Interpolates arguments using JSON serialization.
 
     python(_templateObject10(), [6, 4, 1, 3]).then(function (x) {
       return t.deepEqual(x, [1, 3, 4, 6]);
@@ -554,7 +555,7 @@ test('readme', function (t) {
   });
   t.test('execute', function (t) {
     t.plan(1);
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     var a = 123,
         b = 321;
     python.ex(_templateObject12());
@@ -565,7 +566,7 @@ test('readme', function (t) {
   });
   t.test('lock', function (t) {
     t.plan(3);
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     python.lock(function (python) {
       python.ex(_templateObject14());
       var value = python(_templateObject15());
@@ -580,7 +581,7 @@ test('readme', function (t) {
       return t.equal(x, 444);
     });
     python(_templateObject17())["catch"](function (e) {
-      if (isPythonException('NameError', e)) {
+      if ((0, _.isPythonException)('NameError', e)) {
         t.ok(true);
       }
     });
@@ -592,7 +593,7 @@ test('readme', function (t) {
   });
   t.test('lock recommended', function (t) {
     t.plan(1);
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     python.ex(_templateObject20());
     python(_templateObject21()).then(function (x) {
       return t.equal(x, 444);
@@ -601,15 +602,15 @@ test('readme', function (t) {
   });
   t.test('stdout', function (t) {
     t.plan(1);
-    var python = pythonBridge({
+    var python = (0, _["default"])({
       stdio: ['pipe', 'pipe', process.stderr]
     });
     mkdirTemp('node-python-bridge-test').then(function (tempdir) {
-      var OUTPUT = path.join(tempdir, 'output.txt');
+      var OUTPUT = _path["default"].join(tempdir, 'output.txt');
 
       var fs = require('fs');
 
-      var readFileAsync = promisify(fs.readFile);
+      var readFileAsync = (0, _es6Promisify.promisify)(fs.readFile);
       var fileWriter = fs.createWriteStream(OUTPUT);
       python.stdout.pipe(fileWriter); // listen on Python process's stdout
 
@@ -635,14 +636,14 @@ test('readme', function (t) {
 
     var pTimeout = require('p-timeout');
 
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     pTimeout(python.ex(_templateObject23()), 100).then(function (x) {
       t.ok(false);
     })["catch"](function (e) {
       if (e instanceof pTimeout.TimeoutError) {
         python.kill('SIGKILL');
         t.ok(true);
-        python = pythonBridge();
+        python = (0, _["default"])();
       }
     });
     setTimeout(function () {
@@ -654,14 +655,14 @@ test('readme', function (t) {
   });
   t.test('exceptions', function (t) {
     t.plan(6);
-    var python = pythonBridge();
+    var python = (0, _["default"])();
     python.ex(_templateObject25())["catch"](function (e) {
       if (e instanceof python.Exception) {
         t.ok(true);
       }
     });
     python.ex(_templateObject26())["catch"](function (e) {
-      if (e instanceof pythonBridge.PythonException) {
+      if (e instanceof _["default"].PythonException) {
         t.ok(true);
       }
     });
@@ -682,7 +683,7 @@ test('readme', function (t) {
       return t.equal(x, 3);
     });
     python(_templateObject28())["catch"](function (e) {
-      if (pythonBridge.isPythonException('ZeroDivisionError', e)) {
+      if (_["default"].isPythonException('ZeroDivisionError', e)) {
         return Promise.resolve(Infinity);
       }
     }).then(function (x) {
@@ -692,9 +693,9 @@ test('readme', function (t) {
   });
   t.end();
 });
-test('nested locks', function (t) {
+(0, _tap.test)('nested locks', function (t) {
   t.plan(3);
-  var python = pythonBridge();
+  var python = (0, _["default"])();
   python.lock(function (python) {
     python.ex(_templateObject29());
     var $value1 = python(_templateObject30());
@@ -719,7 +720,7 @@ test('nested locks', function (t) {
     return t.equal(x, 1443);
   });
   python(_templateObject34())["catch"](function (e) {
-    if (isPythonException('NameError', e)) {
+    if ((0, _.isPythonException)('NameError', e)) {
       t.ok(true);
     }
   });
@@ -729,9 +730,9 @@ test('nested locks', function (t) {
   });
   python.disconnect();
 });
-test('exceptions', function (t) {
+(0, _tap.test)('exceptions', function (t) {
   t.plan(3);
-  var python = pythonBridge();
+  var python = (0, _["default"])();
   python(_templateObject37())["catch"](function () {
     return t.ok(true);
   });
@@ -742,46 +743,46 @@ test('exceptions', function (t) {
       return Promise.reject(e);
     }
   })["catch"](function (e) {
-    if (e instanceof PythonException) {
+    if (e instanceof _.PythonException) {
       t.ok(true);
     }
   });
   python(_templateObject39())["catch"](function (e) {
-    if (isPythonException('IOError', e)) {
+    if ((0, _.isPythonException)('IOError', e)) {
       t.ok(false);
     } else {
       return Promise.reject(e);
     }
   })["catch"](function (e) {
-    if (isPythonException('ZeroDivisionError', e)) {
+    if ((0, _.isPythonException)('ZeroDivisionError', e)) {
       t.ok(true);
     }
   });
   python.end();
 });
-test('json interpolation', function (t) {
-  t.equal(pythonBridge.json(_templateObject40()), 'def hello(a, b):\n    return a + b\n');
-  t.equal(pythonBridge.json(_templateObject41()), 'hello()');
-  t.equal(pythonBridge.json(_templateObject42(), 'world'), 'hello("world")');
-  t.equal(pythonBridge.json(_templateObject43(), 'world', [1, 2, 3]), 'hello("world", [1, 2, 3])');
-  t.equal(pythonBridge.json(_templateObject44(), new Map([[1, 2], [3, 4]])), 'hello({1: 2, 3: 4})');
-  t.equal(pythonBridge.json(_templateObject45(), NaN, Infinity, -Infinity), "hello(float('nan'), float('inf'), float('-inf'))");
+(0, _tap.test)('json interpolation', function (t) {
+  t.equal(_["default"].json(_templateObject40()), 'def hello(a, b):\n    return a + b\n');
+  t.equal(_["default"].json(_templateObject41()), 'hello()');
+  t.equal(_["default"].json(_templateObject42(), 'world'), 'hello("world")');
+  t.equal(_["default"].json(_templateObject43(), 'world', [1, 2, 3]), 'hello("world", [1, 2, 3])');
+  t.equal(_["default"].json(_templateObject44(), new Map([[1, 2], [3, 4]])), 'hello({1: 2, 3: 4})');
+  t.equal(_["default"].json(_templateObject45(), NaN, Infinity, -Infinity), "hello(float('nan'), float('inf'), float('-inf'))");
   t.end();
 });
-test('bug #22 returning NaN or infinity does not work', function (t) {
+(0, _tap.test)('bug #22 returning NaN or infinity does not work', function (t) {
   t.plan(1);
   var s = {
     a: NaN,
     b: Infinity,
     c: -Infinity
   };
-  var python = pythonBridge();
+  var python = (0, _["default"])();
   python(_templateObject46(), s).then(function (x) {
     return t.deepEqual(x, s);
   });
   python.end();
 });
-test('bug #24 support more than just numbers and strings', function (t) {
+(0, _tap.test)('bug #24 support more than just numbers and strings', function (t) {
   t.plan(1);
   var s = {
     a: 'asdf',
@@ -789,7 +790,7 @@ test('bug #24 support more than just numbers and strings', function (t) {
     c: true,
     d: [1, 2, null]
   };
-  var python = pythonBridge();
+  var python = (0, _["default"])();
   python(_templateObject47(), s).then(function (x) {
     return t.deepEqual(x, s);
   });

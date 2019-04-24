@@ -295,7 +295,6 @@ function serializePython(value) {
 }
 
 function promiseTry(f) {
-  // return Promise.try(f);
   return new Promise(function (resolve, reject) {
     try {
       resolve(f());
