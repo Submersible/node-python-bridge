@@ -1,17 +1,16 @@
 'use strict';
 
-let pythonBridge = require('./');
-let PythonException = pythonBridge.PythonException;
-let isPythonException = pythonBridge.isPythonException;
-let test = require('tap').test;
-let Promise = require('bluebird');
-let mkdirTemp = Promise.promisify(require('temp').mkdir);
-let path = require('path');
+import pythonBridge from './';
+import {PythonException, isPythonException} from './';
+import {test} from 'tap';
+import path from 'path';
+import {promisify} from 'es6-promisify';
+const mkdirTemp = promisify(require('temp').mkdir);
 
 test('leave __future__ alone!', t => {
     t.plan(2);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
     python.ex`import sys`;
     python`sys.version_info[0] > 2`.then(py3 => {
         python`type('').__name__`.then(x => t.equal(x, 'str'));
@@ -21,7 +20,9 @@ test('leave __future__ alone!', t => {
         } else {
             python`type('').__name__`.then(x => t.equal(x, 'unicode'));
         }
-    }).finally(() => {
+    }).then(() => {
+        python.end();
+    }, () => {
         python.end();
     });
 });
@@ -30,11 +31,11 @@ test('readme', t => {
     t.test('example', t => {
         t.plan(2);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
         python.ex`import math`;
         python`math.sqrt(9)`.then(x => t.equal(x, 3));
 
-        let list = [3, 4, 2, 1];
+        const list = [3, 4, 2, 1];
         python`sorted(${list})`.then(x => t.deepEqual(x, list.sort()));
 
         python.end();
@@ -43,12 +44,12 @@ test('readme', t => {
     t.test('expression', t => {
         t.plan(2);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
         // Interpolates arguments using JSON serialization.
         python`sorted(${[6, 4, 1, 3]})`.then(x => t.deepEqual(x, [1, 3, 4, 6]));
 
         // Passing key-value arguments
-        let obj = {hello: 'world', foo: 'bar'};
+        const obj = {hello: 'world', foo: 'bar'};
         python`dict(baz=123, **${obj})`.then(x => {
             t.deepEqual(x, {baz: 123, hello: 'world', foo: 'bar'});
         });
@@ -58,8 +59,8 @@ test('readme', t => {
     t.test('execute', t => {
         t.plan(1);
 
-        let python = pythonBridge();
-        let a = 123, b = 321;
+        const python = pythonBridge();
+        const a = 123, b = 321;
         python.ex`
             def hello(a, b):
                 return a + b
@@ -71,28 +72,31 @@ test('readme', t => {
     t.test('lock', t => {
         t.plan(3);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.lock(python => {
             python.ex`hello = 123`;
-            let value = python`hello + 321`;
+            const value = python`hello + 321`;
             return new Promise(resolve => setTimeout(() => {
                 python.ex`del hello`.then(() => resolve(value));
             }, 100));
         }).then(x => t.equal(x, 444));
 
-        python`hello + 321`.catch(isPythonException('NameError'), () => t.ok(true));
+        python`hello + 321`.catch(e => {
+            if (isPythonException('NameError', e)) {
+                t.ok(true);
+            }
+        });
         python.ex`hello = 123`;
         python`hello + 321`.then(x => t.equal(x, 444));
 
         python.disconnect();
     });
 
-
     t.test('lock recommended', t => {
         t.plan(1);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.ex`
             def atomic():
@@ -106,15 +110,14 @@ test('readme', t => {
 
     t.test('stdout', t => {
         t.plan(1);
-        let python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
+        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
 
         mkdirTemp('node-python-bridge-test').then(tempdir => {
             const OUTPUT = path.join(tempdir, 'output.txt');
 
-            let Promise = require('bluebird');
-            let fs = Promise.promisifyAll(require('fs'));
-
-            let fileWriter = fs.createWriteStream(OUTPUT);
+            const fs = require('fs');
+            const readFileAsync = promisify(fs.readFile);
+            const fileWriter = fs.createWriteStream(OUTPUT);
 
             python.stdout.pipe(fileWriter);
 
@@ -126,7 +129,7 @@ test('readme', t => {
                     sys.stdout.flush()
             `.then(function () {
                 fileWriter.end();
-                fs.readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
+                readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
                     t.equal(x.replace(/\r/g, ''), 'hello\nworld\n')
                 });
             });
@@ -145,49 +148,61 @@ test('readme', t => {
     t.test('kill', t => {
         t.plan(2);
 
+        const pTimeout = require('p-timeout');
         let python = pythonBridge();
 
-        let Promise = require('bluebird');
-
-        python.ex`
+        pTimeout(python.ex`
             from time import sleep
             sleep(9000)
-        `.timeout(100).then(x => {
+        `, 100).then(x => {
             t.ok(false);
-        }).catch(Promise.TimeoutError, exit_code => {
-            python.kill('SIGKILL');
-            t.ok(true);
-            python = pythonBridge();
+        }).catch(e => {
+            if (e instanceof pTimeout.TimeoutError) {
+                python.kill('SIGKILL');
+                t.ok(true);
+                python = pythonBridge();
+            }
         });
         setTimeout(() => {
             python`1 + 2`.then(x => t.equal(x, 3));
             python.disconnect();
         }, 200);
-
-        // python.disconnect();
     });
 
     t.test('exceptions', t => {
         t.plan(6);
 
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         python.ex`
             hello = 123
             print(hello + world)
             world = 321
-        `.catch(python.Exception, () => t.ok(true));
+        `.catch(e => {
+            if (e instanceof python.Exception) {
+                t.ok(true);
+            }
+        });
 
         python.ex`
             hello = 123
             print(hello + world)
             world = 321
-        `.catch(pythonBridge.PythonException, () => t.ok(true));
+        `.catch(e => {
+            if (e instanceof pythonBridge.PythonException) {
+                t.ok(true);
+            }
+        });
 
         function pyDivide(numerator, denominator) {
             return python`${numerator} / ${denominator}`
-                .catch(python.isException('ZeroDivisionError'), () => Promise.resolve(Infinity));
+                .catch(e => {
+                    if (python.isException('ZeroDivisionError', e)) {
+                        return Promise.resolve(Infinity);
+                    }
+                });
         }
+
         pyDivide(1, 0).then(x => {
             t.equal(x, Infinity);
             t.equal(1 / 0, Infinity);
@@ -195,7 +210,11 @@ test('readme', t => {
         pyDivide(6, 2).then(x => t.equal(x, 3));
 
         python`1 / 0`
-            .catch(pythonBridge.isPythonException('ZeroDivisionError'), () => Promise.resolve(Infinity))
+            .catch(e => {
+                if (pythonBridge.isPythonException('ZeroDivisionError', e)) {
+                    return Promise.resolve(Infinity);
+                }
+            })
             .then(x => t.equal(x, 1 / 0));
 
         python.disconnect();
@@ -207,25 +226,29 @@ test('readme', t => {
 test('nested locks', t => {
     t.plan(3);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
 
     python.lock(python => {
         python.ex`hello = 123`;
-        let $value1 = python`hello + 321`;
-        let $value2 = python.lock(python => {
+        const $value1 = python`hello + 321`;
+        const $value2 = python.lock(python => {
             python.ex`world = 808`;
             return python`world + 191`;
         });
         return new Promise(resolve => setTimeout(() => {
             python.ex`del hello`.then(() => {
-                return Promise.all([$value1, $value2]).spread((value1, value2) => {
+                return Promise.all([$value1, $value2]).then(([value1, value2]) => {
                     resolve(value1 + value2);
                 })
             });
         }, 100));
     }).then(x => t.equal(x, 1443));
 
-    python`hello + 808`.catch(isPythonException('NameError'), () => t.ok(true));
+    python`hello + 808`.catch(e => {
+        if (isPythonException('NameError', e)) {
+            t.ok(true);
+        }
+    });
     python.ex`hello = 123`;
     python`hello + 321`.then(x => t.equal(x, 444));
 
@@ -235,14 +258,34 @@ test('nested locks', t => {
 test('exceptions', t => {
     t.plan(3);
 
-    let python = pythonBridge();
+    const python = pythonBridge();
     python`1 / 0`.catch(() => t.ok(true));
     python`1 / 0`
-        .catch(ReferenceError, () => t.ok(false))
-        .catch(PythonException, () => t.ok(true));
+        .catch(e => {
+            if (e instanceof ReferenceError) {
+                t.ok(false);
+            } else {
+                return Promise.reject(e);
+            }
+        })
+        .catch(e => {
+            if (e instanceof PythonException) {
+                t.ok(true);
+            }
+        });
     python`1 / 0`
-        .catch(isPythonException('IOError'), () => t.ok(false))
-        .catch(isPythonException('ZeroDivisionError'), () => t.ok(true));
+        .catch(e => {
+            if (isPythonException('IOError', e)) {
+                t.ok(false)
+            } else {
+                return Promise.reject(e);
+            }
+        })
+        .catch(e => {
+            if (isPythonException('ZeroDivisionError', e)) {
+                t.ok(true)
+            }
+        });
     python.end();
 });
 

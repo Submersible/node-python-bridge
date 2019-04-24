@@ -1,7 +1,8 @@
-import { test } from 'tap';
-import { join as path_join } from 'path';
-import { promisify } from 'bluebird';
-import { pythonBridge, PythonException, isPythonException } from './index';
+import {test} from 'tap';
+import {join as path_join} from 'path';
+import {promisify} from 'es6-promisify';
+import {isPythonException, pythonBridge, PythonException} from './index';
+import pTimeout from 'p-timeout';
 
 const mkdirTemp = promisify(require('temp').mkdir);
 
@@ -22,7 +23,7 @@ test('readme', t => {
     });
 
     t.test('expression', async assert => {
-        let python = pythonBridge();
+        const python = pythonBridge();
         try {
             // Interpolates arguments using JSON serialization.
             assert.deepEqual([1, 3, 4, 6], await python`sorted(${[6, 4, 1, 3]})`);
@@ -55,7 +56,7 @@ test('readme', t => {
     t.test('lock', async assert => {
         const python = pythonBridge();
         try {
-            const x: number = await python.lock(async python =>{
+            const x: number = await python.lock(async python => {
                 await python.ex`hello = 123`;
                 return await python`hello + 321`;
             });
@@ -70,7 +71,7 @@ test('readme', t => {
     t.test('lock recommended', async assert => {
         const python = pythonBridge();
         try {
-            const x: number = await python.lock(async python =>{
+            const x: number = await python.lock(async python => {
                 await python.ex`hello = 123`;
                 return await python`hello + 321`;
             });
@@ -81,16 +82,15 @@ test('readme', t => {
         }
     });
 
-
     t.test('stdout', async assert => {
-        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]})
+        const python = pythonBridge({stdio: ['pipe', 'pipe', process.stderr]});
 
         try {
             const tempdir = await mkdirTemp('node-python-bridge-test');
             const OUTPUT = path_join(tempdir, 'output.txt');
 
-            const { delay, promisifyAll } = require('bluebird');
-            const { createWriteStream, readFileAsync } = promisifyAll(require('fs'));
+            const {createWriteStream, readFile} = require('fs');
+            const readFileAsync = promisify(readFile);
             const fileWriter = createWriteStream(OUTPUT);
 
             python.stdout.pipe(fileWriter);
@@ -105,7 +105,7 @@ test('readme', t => {
 
             // write to Python process's stdin
             python.stdin.write('hello\n');
-            await delay(10);
+            await new Promise(resolve => setTimeout(resolve, 10));
             python.stdin.write('world\n');
 
             // close python's stdin, and wait for python to finish writing
@@ -121,19 +121,16 @@ test('readme', t => {
     });
 
     t.test('kill', async assert => {
-
         let python = pythonBridge();
 
-        let {TimeoutError} = require('bluebird');
-
         try {
-            await python.ex`
+            await pTimeout(python.ex`
                 from time import sleep
                 sleep(9000)
-            `.timeout(100);
+            `, 100);
             assert.ok(false); // should not reach this
         } catch (e) {
-            if (e instanceof TimeoutError) {
+            if (e instanceof pTimeout.TimeoutError) {
                 python.kill('SIGKILL');
                 python = pythonBridge();
             } else {
@@ -144,7 +141,7 @@ test('readme', t => {
     });
 
     t.test('exceptions', async assert => {
-        let python = pythonBridge();
+        const python = pythonBridge();
 
         try {
             await python.ex`
@@ -172,6 +169,7 @@ test('readme', t => {
             assert.equal(Infinity, await pyDivide(1, 0));
             assert.equal(1 / 0, await pyDivide(1, 0));
         }
+
         await main();
 
         python.end();

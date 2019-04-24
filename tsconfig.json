@@ -17,6 +17,9 @@
     , "noLib": false
     , "traceResolution": false
   }
+  , "linterOptions": {
+    "typeCheck": true
+  }
   , "exclude": [
       "node_modules/"
     , "dist/"

@@ -1,8 +1,7 @@
 'use strict';
 
-let Promise = require('bluebird');
 let path = require('path');
-let child_process = Promise.promisifyAll(require('child_process'));
+let child_process = require('child_process');
 
 const PYTHON_BRIDGE_SCRIPT = path.join(__dirname, 'node_python_bridge.py');
 
@@ -57,6 +56,7 @@ function pythonBridge(opts) {
                 }
             }));
         }
+
         return wrapper;
     }
 
@@ -142,11 +142,11 @@ function singleQueue() {
         last = new Promise(resolve => {
             done = resolve;
         });
-        return new Promise((resolve, reject) => {
-            wait.finally(() => {
-                Promise.try(f).then(resolve, reject);
+        return promiseFinally(new Promise((resolve, reject) => {
+            promiseFinally(wait, () => {
+                promiseTry(f).then(resolve, reject);
             });
-        }).finally(() => done());
+        }), () => done());
     };
 }
 
@@ -207,6 +207,21 @@ function serializePython(value) {
         const props = Object.keys(value).map(k => `${serializePython(k)}: ${serializePython(value[k])}`);
         return `{${props.join(', ')}}`;
     }
+}
+
+function promiseTry(f) {
+    return new Promise((resolve, reject) => {
+        try {
+            resolve(f());
+        } catch (e) {
+            reject(e)
+        }
+    });
+}
+
+function promiseFinally(promise, cb) {
+    promise.then(cb, cb);
+    return promise;
 }
 
 pythonBridge.pythonBridge = pythonBridge;
