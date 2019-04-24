@@ -149,15 +149,16 @@ test('readme', t => {
     t.test('kill', t => {
         t.plan(2);
 
+        const pTimeout = require('p-timeout');
         let python = pythonBridge();
 
-        promiseTimeout(python.ex`
+        pTimeout(python.ex`
             from time import sleep
             sleep(9000)
         `, 100).then(x => {
             t.ok(false);
         }).catch(e => {
-            if (e instanceof PromiseTimeout) {
+            if (e instanceof pTimeout.TimeoutError) {
                 python.kill('SIGKILL');
                 t.ok(true);
                 python = pythonBridge();
@@ -236,8 +237,8 @@ test('nested locks', t => {
         });
         return new Promise(resolve => setTimeout(() => {
             python.ex`del hello`.then(() => {
-                return Promise.all([$value1, $value2]).then((args) => {
-                    resolve(args[0] + args[1]);
+                return Promise.all([$value1, $value2]).then(([value1, value2]) => {
+                    resolve(value1 + value2);
                 })
             });
         }, 100));
@@ -296,31 +297,3 @@ test('bug #24 support more than just numbers and strings', t => {
     python`(lambda x: x)(${s})`.then(x => t.deepEqual(x, s));
     python.end();
 });
-
-function promiseTimeout(promise, delay) {
-    return new Promise((resolve, reject) => {
-        let timer = setTimeout(() => {
-            timer = null;
-            reject(new PromiseTimeout());
-        }, delay);
-
-        promise.then(function () {
-            if (timer === null) {
-                return;
-            }
-            clearTimeout(timer);
-            timer = null;
-            resolve.apply(this, arguments);
-        }, function () {
-            if (timer === null) {
-                return;
-            }
-            clearTimeout(timer);
-            timer = null;
-            reject.apply(this, arguments);
-        })
-    })
-}
-
-class PromiseTimeout extends Error {
-}

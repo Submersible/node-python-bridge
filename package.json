@@ -2,14 +2,15 @@
   "name": "python-bridge",
   "version": "1.1.0",
   "description": "Node.js to Python bridge ✨🐍🚀✨",
-  "main": "index.js",
+  "main": "index-compiled.js",
   "types": "index.d.ts",
   "scripts": {
     "lint": "npm run lint:ts",
     "lint:ts": "tslint --project tsconfig.json --type-check",
     "test": "npm run lint && npm run test:js && npm run test:ts",
-    "test:js": "tap test.js",
-    "test:ts": "tsc --lib ES2015 test_typescript.ts && tap test_typescript.js"
+    "test:js": "tap test-compiled.js",
+    "test:ts": "tsc --lib ES2015 test_typescript.ts && tap test_typescript.js",
+    "compile": "babel index.js --out-file index-compiled.js && babel test.js --out-file test-compiled.js"
   },
   "repository": {
     "type": "git",
@@ -27,11 +28,24 @@
   "author": "Ryan Munro <ryan@submersible.io>",
   "license": "MIT",
   "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
+    "@babel/plugin-transform-async-to-generator": "^7.4.0",
+    "@babel/plugin-transform-spread": "^7.2.2",
+    "@babel/preset-env": "^7.4.3",
+    "@babel/preset-es2017": "^7.0.0-beta.53",
     "@types/node": "^8.0.14",
     "es6-promisify": "^6.0.1",
+    "p-timeout": "^3.1.0",
     "tap": "^10.7.0",
     "temp": "^0.8.3",
     "tslint": "^5.5.0",
     "typescript": "^2.4.1"
+  },
+  "babel": {
+    "presets": [
+      "@babel/preset-env"
+    ],
+    "plugins": []
   }
 }

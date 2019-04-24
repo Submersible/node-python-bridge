@@ -47,11 +47,3 @@ export type Pipe = 'pipe' | 'ignore' | 'inherit';
 export type PipeStdin = Pipe | NodeJS.ReadableStream;
 export type PipeStdout = Pipe | NodeJS.WritableStream;
 export type PipeStderr = Pipe | NodeJS.WritableStream;
-
-export namespace Bluebird {
-  interface Promise<T> extends _Promise<T>  {
-    timeout(milliseconds: number): Bluebird.Promise<T>;
-  }
-}
-
-type _Promise<T> = Promise<T>;
