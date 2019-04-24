@@ -6,7 +6,7 @@
   "types": "index.d.ts",
   "scripts": {
     "lint": "npm run lint:ts",
-    "lint:ts": "tslint --project tsconfig.json --type-check",
+    "lint:ts": "tslint --project tsconfig.json",
     "test": "npm run lint && npm run test:js && npm run test:ts",
     "test:js": "tap test-compiled.js",
     "test:ts": "tsc --lib ES2015 test_typescript.ts && tap test_typescript.js",

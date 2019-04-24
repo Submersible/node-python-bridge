@@ -90,8 +90,8 @@ test('readme', t => {
             const tempdir = await mkdirTemp('node-python-bridge-test');
             const OUTPUT = path_join(tempdir, 'output.txt');
 
-            const { delay, promisifyAll } = require('bluebird');
-            const { createWriteStream, readFileAsync } = promisifyAll(require('fs'));
+            const { createWriteStream, readFile } = require('fs');
+            const readFileAsync = promisify(readFile);
             const fileWriter = createWriteStream(OUTPUT);
 
             python.stdout.pipe(fileWriter);
@@ -106,7 +106,7 @@ test('readme', t => {
 
             // write to Python process's stdin
             python.stdin.write('hello\n');
-            await delay(10);
+            await new Promise(resolve => setTimeout(resolve, 10));
             python.stdin.write('world\n');
 
             // close python's stdin, and wait for python to finish writing
