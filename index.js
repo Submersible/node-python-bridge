@@ -15,6 +15,7 @@ function pythonBridge(opts) {
         env: opts && opts.env,
         uid: opts && opts.uid,
         gid: opts && opts.gid,
+        detached: opts && opts.detached,
         stdio: stdio.concat(['ipc'])
     };
 
