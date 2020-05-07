@@ -1,4 +1,4 @@
-# python-bridge [![Build Status](https://secure.travis-ci.org/Submersible/node-python-bridge.png?branch=master)](http://travis-ci.org/Submersible/node-python-bridge) [![Build Status](https://ci.appveyor.com/api/projects/status/8h64yyve684nn900/branch/master?svg=true)](https://ci.appveyor.com/project/munro/node-python-bridge/branch/master)
+# python-bridge [![Build Status](https://github.com/Submersible/node-python-bridge/workflows/test/badge.svg?branch=master)](https://github.com/Submersible/node-python-bridge/actions?query=workflow%3Atest+branch%3Amaster) [![Build Status](https://secure.travis-ci.org/Submersible/node-python-bridge.png?branch=master)](http://travis-ci.org/Submersible/node-python-bridge)
 
 Most robust and simple Python bridge.  [Features](#features), and [comparisons](#comparisons) to other Python bridges below, supports Windows.
 

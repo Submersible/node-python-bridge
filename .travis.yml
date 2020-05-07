@@ -1,29 +1,60 @@
 language: python
+dist: bionic
 os:
     - "linux"
-env:
-    - NODE_VERSION="11"
-    - NODE_VERSION="10"
-    - NODE_VERSION="9"
-    - NODE_VERSION="8"
-    - NODE_VERSION="7.5"
-    - NODE_VERSION="6.1"
-    - NODE_VERSION="5.11"
-    - NODE_VERSION="4.4"
-python:
-    - "3.7-dev"
-    - "3.6"
-    - "3.5"
-    - "3.4"
-    - "3.3"
-    - "3.2"
-    - "2.7"
-    - "2.6"
+jobs:
+    include:
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="14"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="13"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="12"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="11"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="10"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="9"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="8"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="7.5"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="6.1"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="5.11"
+        - language: generic
+          env: PYTHON_VERSION="2.6" NODE_VERSION="4.4"
+        - os: windows
+          language: node_js
+          node_js: 12
+          env: >-
+            PATH=/c/Python27:/c/Python27/Scripts:$PATH
+            NODE_GYP_FORCE_PYTHON=/c/Python27/python.exe
+          before_install:
+            - env
+            - echo "WINDOWS!!!"
+            - choco install python2
+            - node --version
+            - python -V
 before_install:
-    - rm -rf ~/.nvm
-    - git clone https://github.com/creationix/nvm.git ~/.nvm
-    - source ~/.nvm/nvm.sh
+    - env
     - nvm install $NODE_VERSION
+    - |
+        if [ "${PYTHON_VERSION}" == "2.6" ]; then
+            sudo apt-get update
+            sudo apt-get install -yq software-properties-common
+            sudo add-apt-repository ppa:deadsnakes/ppa -y
+            sudo apt-get update -q
+            sudo apt-get install -yq python2.6
+            sudo update-alternatives --install /usr/local/bin/python python /usr/bin/python2.6 0
+            export PATH="/usr/local/bin:$PATH"
+        fi
+    - which python
+    - which node
+    - python -V
+    - node --version
 install:
     - npm install -d
 before_script:

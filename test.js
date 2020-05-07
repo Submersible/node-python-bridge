@@ -125,9 +125,10 @@ test('readme', t => {
                     sys.stdout.write(line)
                     sys.stdout.flush()
             `.then(function () {
-                fileWriter.end();
-                fs.readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
-                    t.equal(x.replace(/\r/g, ''), 'hello\nworld\n')
+                fileWriter.end(function () {
+                    fs.readFileAsync(OUTPUT, {encoding: 'utf8'}).then(x => {
+                        t.equal(x.replace(/\r/g, ''), 'hello\nworld\n')
+                    });
                 });
             });
 
