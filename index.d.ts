@@ -11,6 +11,8 @@ export interface PythonBridgeOptions {
   env?: { [key: string]: string | undefined; };
   uid?: number;
   gid?: number;
+  /** Path to the `node_python_bridge.py` file. */
+  pythonBridgeScriptPath?: string
 }
 
 export interface PythonBridge {

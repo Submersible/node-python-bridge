@@ -40,6 +40,7 @@ Also inherits the following from [`child_process.spawn([options])`](https://node
 * `options.stdio` - Array Child's stdio configuration. Defaults to `['pipe', process.stdout, process.stderr]`
 * `options.uid` - Number Sets the user identity of the process.
 * `options.gid` - Number Sets the group identity of the process.
+* `options.pythonBridgeScriptPath` - String Path to the `node_python_bridge.py` file.
 
 ```javascript
 var python = pythonBridge({
