@@ -4,8 +4,6 @@ let Promise = require('bluebird');
 let path = require('path');
 let child_process = Promise.promisifyAll(require('child_process'));
 
-const PYTHON_BRIDGE_SCRIPT = path.join(__dirname, 'node_python_bridge.py');
-
 function pythonBridge(opts) {
     // default options
     let intepreter = opts && opts.python || 'python';
@@ -19,7 +17,8 @@ function pythonBridge(opts) {
     };
 
     // create process bridge
-    let ps = child_process.spawn(intepreter, [PYTHON_BRIDGE_SCRIPT], options);
+    const pythonBridgeScriptPath = opts.pythonBridgeScriptPath || path.join(__dirname, 'node_python_bridge.py');
+    let ps = child_process.spawn(intepreter, [pythonBridgeScriptPath], options);
     let queue = singleQueue();
 
     function sendPythonCommand(type, enqueue, self) {
