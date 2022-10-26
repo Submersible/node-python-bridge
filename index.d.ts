@@ -11,6 +11,7 @@ export interface PythonBridgeOptions {
   env?: { [key: string]: string | undefined; };
   uid?: number;
   gid?: number;
+  detached?: boolean;
 }
 
 export interface PythonBridge {

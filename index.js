@@ -15,7 +15,8 @@ function pythonBridge(opts) {
         env: opts && opts.env,
         uid: opts && opts.uid,
         gid: opts && opts.gid,
-        stdio: stdio.concat(['ipc'])
+        stdio: stdio.concat(['ipc']),
+        detached: opts && opts.detached
     };
 
     // create process bridge
