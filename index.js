@@ -22,6 +22,8 @@ function pythonBridge(opts) {
     let ps = child_process.spawn(intepreter, [PYTHON_BRIDGE_SCRIPT], options);
     let queue = singleQueue();
 
+    ps.unref();
+
     function sendPythonCommand(type, enqueue, self) {
         function wrapper() {
             self = self || wrapper;
@@ -32,12 +34,14 @@ function pythonBridge(opts) {
             }
 
             return enqueue(() => new Promise((resolve, reject) => {
+                ps.channel.ref();
                 ps.send({type: type, code: code});
                 ps.once('message', onMessage);
                 ps.once('close', onClose);
 
                 function onMessage(data) {
                     ps.removeListener('close', onClose);
+                    ps.channel.unref();
                     if (data && data.type && data.type === 'success') {
                         resolve(eval(`(${data.value})`));
                     } else if (data && data.type && data.type === 'exception') {
