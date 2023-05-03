@@ -9,6 +9,7 @@ const PYTHON_BRIDGE_SCRIPT = path.join(__dirname, 'node_python_bridge.py');
 function pythonBridge(opts) {
     // default options
     let intepreter = opts && opts.python || 'python';
+    let args = opts && opts.args || [];    
     let stdio = opts && opts.stdio || ['pipe', process.stdout, process.stderr];
     let options = {
         cwd: opts && opts.cwd,
@@ -19,7 +20,7 @@ function pythonBridge(opts) {
     };
 
     // create process bridge
-    let ps = child_process.spawn(intepreter, [PYTHON_BRIDGE_SCRIPT], options);
+    let ps = child_process.spawn(intepreter, args.push(PYTHON_BRIDGE_SCRIPT), options);
     let queue = singleQueue();
 
     function sendPythonCommand(type, enqueue, self) {
